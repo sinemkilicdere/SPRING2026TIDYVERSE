@@ -1,0 +1,92 @@
+---
+title: "Vignette"
+author: "Guibril Ramde"
+format: html
+editor: visual
+---
+
+## Approach
+
+For this vignette assignment, I selected a dataset from Kaggle related to AI job market trends. The dataset was uploaded to my GitHub fork, and a raw file link was used to directly load the data into R.
+
+The dataset is already well-structured and follows tidy data principles, with consistent variable names and appropriate data types. As a result, minimal data cleaning was required.
+
+The analysis focuses on using Tidyverse packages, particularly `dplyr` and `ggplot2`, to transform, summarize, and visualize key insights such as skill demand, salary trends, and hiring patterns across countries.
+
+## Code and Analyzation
+
+```{r}
+library(tidyverse)
+
+
+
+url <- "https://raw.githubusercontent.com/japhet125/SPRING2026TIDYVERSE/refs/heads/main/AI_Job_Market_Trends_2026.csv"
+
+load_jobs_data <- read_csv(url)
+glimpse(load_jobs_data)
+```
+
+Column names
+
+```{r}
+
+colnames(load_jobs_data)
+```
+
+##Skills in demand
+
+```{r}
+skill_demand <- load_jobs_data |>
+  summarise(
+    python = mean(skills_python, na.rm = TRUE),
+    sql = mean(skills_sql, na.rm = TRUE),
+    ml = mean(skills_ml, na.rm = TRUE),
+    dl = mean(skills_deep_learning, na.rm = TRUE),
+    cloud = mean(skills_cloud, na.rm = TRUE)
+  )
+skill_demand
+```
+
+**##Salary by experience level**
+
+```{r}
+load_jobs_data |>
+  group_by(experience_level) |>
+  summarise(
+    avg_salary = mean(salary, na.rm = TRUE)
+    
+     
+  ) |>
+  arrange(avg_salary) |>
+  ggplot( aes(x = reorder(experience_level, avg_salary), y = avg_salary, fill = experience_level)) +
+  geom_col() +
+  labs(
+    title = "Experience Level VS Average Salary",
+    x = "Experience Level",
+    y = "Average Salary"
+  ) 
+
+
+```
+
+**##Top countries hiring**
+
+```{r}
+load_jobs_data |>
+  count(country, sort = TRUE) |>
+  slice_head(n =10) |>
+  ggplot(aes(x = reorder(country, n), y =n, fill = country)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Countries Hiring for AI jobs",
+    x = "Country",
+    y = "Number of Job Listings"
+  )
+```
+
+**##Conclusion**
+
+This analysis demonstrates how Tidyverse tools can be effectively used to explore real-world datasets. The results show that skills such as Python, SQL, and machine learning are in high demand across AI-related roles. Additionally, salary trends vary significantly by experience level, with senior roles earning higher average salaries.
+
+The analysis also highlights global hiring patterns, with certain countries showing higher demand for AI professionals. Overall, this vignette illustrates the power of Tidyverse for transforming, summarizing, and visualizing data to generate meaningful insights.

@@ -1,3 +1,4 @@
+main
 # SPRING2026 TidyVerse Vignettes
 
 A collaborative collection of R vignettes built by students in SPRING2026, each demonstrating how to use TidyVerse packages with real-world datasets.
@@ -100,9 +101,11 @@ Initial Description and Link:
 Revision/Addition Description and Link:
 
 # Guibril R
-Initial Description and Link:
+Initial Description and Link: https://raw.githubusercontent.com/japhet125/SPRING2026TIDYVERSE/refs/heads/main/AI_Job_Market_Trends_2026.csv
 
-Revision/Addition Description and Link:
+Guibril Ramde added AI_Job_Market_Trends_2026.csv file and qmd file: https://github.com/japhet125/SPRING2026TIDYVERSE/blob/main/Guibril_Vignette.qmd
+
+Revision/Addition Description and Link: https://www.kaggle.com/datasets/sohaibdevv/ai-and-data-science-job-market-2025-2026
 
 # Ha Kyoung K
 Initial Description and Link:
@@ -315,4 +318,4 @@ Revision/Addition Description and Link:
 Initial Description and Link:
 
 Revision/Addition Description and Link:
-
+main
