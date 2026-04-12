@@ -16,7 +16,12 @@ Each vignette is a standalone `.Rmd` file — open it in RStudio, make sure you 
 | Author | Vignette | Package(s) | What It Covers | Dataset |
 |---|---|---|---|---|
 | Mark H. | [Student Mental Health & Burnout](student_mental_health_ggplot2.Rmd) | ggplot2 | geom_histogram, geom_boxplot, geom_point, geom_smooth, geom_bar, facet_wrap | [Kaggle](https://www.kaggle.com/datasets/sharmajicoder/student-mental-health-and-burnout) |
+
+| Zihao Yu | [zihao_iris_vignette.Rmd](zihao_iris_vignette.Rmd) | dplyr, ggplot2 | pivot_longer, grouped summaries, boxplots, scatter plot|  [Kaggle](https://www.kaggle.com/datasets/uciml/iris?resource=download) |
+
+=======
 | Brandon C. | [Exploring IMDb Ratings by Genre](exploring_imbd_ratings_by_genre_with_tidyverse.qmd) | tidyverse (dplyr, tidyr, ggplot2, readr) | separate_rows, group_by, summarise, filter, geom_col | [Kaggle](https://www.kaggle.com/datasets/harshitshankhdhar/imdb-dataset-of-top-1000-movies-and-tv-shows?resource=download) |
+
 
 ---
 
@@ -334,6 +339,9 @@ Revision/Addition Description and Link:
 
 # Zihao Y
 Initial Description and Link:
+| Author | Vignette | Package(s) | What It Covers | Dataset |
+|---|---|---|---|---|
+| Zihao Yu | [zihao_iris_vignette.Rmd](zihao_iris_vignette.Rmd) | dplyr, ggplot2 | pivot_longer, grouped summaries, boxplots, scatter plot|  [Kaggle](https://www.kaggle.com/datasets/uciml/iris?resource=download) |
 
 Revision/Addition Description and Link:
 
