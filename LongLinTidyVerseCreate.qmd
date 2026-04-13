@@ -1,0 +1,77 @@
+---
+title: "Tidyverse Create"
+author: "Long Lin"
+format: html
+editor: visual
+---
+
+## Introduction
+
+This vignette shows how to use Tidyverse packages like `dplyr` and `ggplot2` to organize data and display findings in a chart. The chosen data source named `global grocery inflation` is from Kaggle.
+
+Source: https://www.kaggle.com/datasets/waddahali/global-grocery-inflation-20252026/data?select=breakfast+basket.csv
+
+## Reading in the data with Tidyverse
+
+We read in the data from Kaggle by first uploading the data to github and then using the `read_csv` method within the `tidyverse` library on a raw github link. Then we use the `glimpse` method within `dplyr` to visualize the columns within the data set.
+
+```{r}
+library(tidyverse)
+
+url <- "https://raw.githubusercontent.com/longflin/DATA-607/refs/heads/main/TIDYVERSE2026/GlobalGroceryInflation.csv"
+
+grocery_inflation <- read_csv(
+  file = url,
+  show_col_types = FALSE,
+  progress = FALSE
+)
+
+glimpse(grocery_inflation)
+
+```
+Next, we use `select` within `dplyr` to select specific columns of interest. For this vignette, we will focus on the price of milk in target cities such as `New York`, `Los Angeles`, `London`, `Paris`, `Beijing`, and `Tokyo`.  In order to do this, we use `filter` for `Item` that is equal to `Milk (1 Liter)` and for `City` that are in the `target_cities` variable.
+
+```{r}
+target_cities <- c("New York", "Los Angeles", "London", "Paris", "Beijing", "Tokyo")
+
+milk_inflation <- grocery_inflation %>%
+  select(City, Country, Item, Month, YoY_Inflation_Estimate_Pct) %>%
+  filter(Item == "Milk (1 Liter)") %>%
+  filter(City %in% target_cities)
+
+head(milk_inflation)
+```
+Here, we use `summarize` to create a new column named `Average_YoY` to grab the average of all the months for each city.
+
+```{r}
+milk_inflation_group <- milk_inflation %>%
+  group_by(City) %>% 
+  summarize(
+    Average_YoY = mean(YoY_Inflation_Estimate_Pct, na.rm = TRUE)
+  )
+
+head(milk_inflation_group)
+```
+In order to visualize the data, we use `ggplot2` to create a bar chart to display the results.
+
+```{r}
+library(ggplot2)
+
+ggplot(milk_inflation_group, aes(x = reorder(City, Average_YoY), 
+                                       y = Average_YoY, 
+                                       fill = City)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = round(Average_YoY, 1)), 
+            hjust = -0.2, 
+            size = 3.5) + 
+  coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) + 
+  labs(
+    title = "Average Milk Inflation by City for Oct 2025 to March 2026",
+    x = "City",
+    y = "Average Year over Year Inflation (%)"
+  ) +
+  theme_minimal()
+```
+## Conclusion
+Tidyverse is a very powerful tool for managing and transforming data.  It allows you to create easy to read charts created from a data source of your choice.  In this example, packages such as `dplyr` and `ggplot2`, made it very easy to manipulate the data and display the results.
