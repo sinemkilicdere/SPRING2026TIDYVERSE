@@ -16,6 +16,8 @@ Each vignette is a standalone `.Rmd` file — open it in RStudio, make sure you 
 | Author | Vignette | Package(s) | What It Covers | Dataset |
 |---|---|---|---|---|
 | Mark H. | [Student Mental Health & Burnout](student_mental_health_ggplot2.Rmd) | ggplot2 | geom_histogram, geom_boxplot, geom_point, geom_smooth, geom_bar, facet_wrap | [Kaggle](https://www.kaggle.com/datasets/sharmajicoder/student-mental-health-and-burnout) |
+| David C.|[IMF exchange rate](David.C/SPS_Data607_Week9_TidyVerse_DC.Rmd)|tidyr,dplyr,tideverse,ggplot2|pivot_longer,geom_line,mutate,filter,theme|[IMF](https://www.imf.org/external/np/fin/data/rms_mth.aspx?SelectDate=2026-01-01&reportType=REP)|
+| Zihao Yu | [zihao_iris_vignette.Rmd](zihao_iris_vignette.Rmd) | dplyr, ggplot2 | pivot_longer, grouped summaries, boxplots, scatter plot|  [Kaggle](https://www.kaggle.com/datasets/uciml/iris?resource=download) |
 | Emily E.| [Bechdel Test](emily_elmouaquite_tidyverse_create.Rmd) | dplyr, stringr, ggplot2 | grouped summaries, arrange, mutate, filter, geom_line, str_detect| fivethirtyeight R library |
 | Zihao Yu | [zihao_iris_vignette.Rmd](zihao_iris_vignette.Rmd) | dplyr, ggplot2 | pivot_longer, grouped summaries, boxplots, scatter plot|  [Kaggle](https://www.kaggle.com/datasets/uciml/iris?resource=download) |
 | Brandon C. | [Exploring IMDb Ratings by Genre](exploring_imbd_ratings_by_genre_with_tidyverse.qmd) | tidyverse (dplyr, tidyr, ggplot2, readr) | separate_rows, group_by, summarise, filter, geom_col | [Kaggle](https://www.kaggle.com/datasets/harshitshankhdhar/imdb-dataset-of-top-1000-movies-and-tv-shows?resource=download) |
@@ -85,6 +87,8 @@ Revision/Addition Description and Link:
 
 # David C
 Initial Description and Link:
+
+[Github-David C-Data607-Week9-TidyVerse](https://github.com/dyc-sps/SPS_Data607_Week9_TidyVerse)
 
 Revision/Addition Description and Link:
 
