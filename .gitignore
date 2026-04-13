@@ -1,11 +1,11 @@
+
 # History files
 .Rhistory
 .Rapp.history
 
 # Session Data files
 .RData
-.RDataTmp
-
+.RDataTm
 # User-specific files
 .Ruserdata
 
@@ -20,6 +20,8 @@
 
 # RStudio files
 .Rproj.user/
+.DS_Store
+*.Rproj
 
 # produced vignettes
 vignettes/*.html
@@ -47,3 +49,9 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+=======
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+>>>>>>> dd00f3e (adding my vignette)

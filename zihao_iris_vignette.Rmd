@@ -1,0 +1,129 @@
+---
+title: "TidyVerse CREATE assignment"
+author: "Zihao Yu"
+date: "2026-04-4"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+## Introduction
+
+This vignette uses the iris dataset to demonstrate basic data summarization with dplyr and visualization with ggplot2.
+
+```{r}
+library(tidyverse)
+
+#Load the data
+data(iris)
+
+## Display the first 6 rows of the dataset
+head(iris)
+```
+
+---
+
+This section summarizes petal length and petal width for each iris species. Comparing these statistics helps show how petal measurements differ across species.
+
+```{r}
+# Group the data by species
+# Calculate summary statistics for petal length and petal width
+petal_summary <- 
+  iris %>%
+  group_by(Species) %>%
+  summarise(
+    mean_petal_length = mean(Petal.Length),
+    median_petal_length = median(Petal.Length),
+    min_petal_length = min(Petal.Length),
+    max_petal_length = max(Petal.Length),
+    sd_petal_length = sd(Petal.Length),
+    mean_petal_width = mean(Petal.Width),
+    median_petal_width = median(Petal.Width),
+    min_petal_width = min(Petal.Width),
+    max_petal_width = max(Petal.Width),
+    sd_petal_width = sd(Petal.Width)
+)
+
+# Display the summary table
+petal_summary
+```
+--
+
+This section summarizes sepal length and sepal width for each iris species. These results help compare sepal characteristics among the three species.
+
+```{r}
+# Calculate summary statistics for sepal length and sepal width
+sepal_summary <- 
+  iris %>%
+  group_by(Species) %>%
+  summarise(
+    mean_sepal_length = mean(Sepal.Length),
+    median_sepal_length = median(Sepal.Length),
+    min_sepal_length = min(Sepal.Length),
+    max_sepal_length = max(Sepal.Length),
+    sd_sepal_length = sd(Sepal.Length),
+    mean_sepal_width = mean(Sepal.Width),
+    median_sepal_width = median(Sepal.Width),
+    min_sepal_width = min(Sepal.Width),
+    max_sepal_width = max(Sepal.Width),
+    sd_sepal_width = sd(Sepal.Width)
+  )
+
+# Display the sepal summary table
+sepal_summary
+```
+
+---
+
+This section uses boxplots to compare all four iris measurements across species. It provides a visual summary of the distribution of each variable.
+
+```{r}
+# Reshape the iris dataset into long format
+# Create one combined boxplot for all four measurements by species
+iris_long <- 
+  iris %>%
+  pivot_longer(
+    cols = c(Sepal.Length, 
+             Sepal.Width,
+             Petal.Length, 
+             Petal.Width),
+    names_to = "Measurement",
+    values_to = "Value"
+)
+
+ggplot(
+  iris_long, 
+  aes(x = Species, y = Value, fill = Species)
+) +
+  geom_boxplot() +
+  facet_wrap(~ Measurement, scales = "free") +
+  labs(
+    title = "Comparison of Iris Measurements by Species",
+    x = "Species",
+    y = "Value"
+)
+```
+
+---
+
+This scatter plot shows the relationship between sepal length and petal length. The three species form distinct clusters, and setosa is  different from the other two species.
+
+```{r}
+# Create a scatter plot
+ggplot(
+  iris, 
+  aes(x = Sepal.Length, y = Petal.Length, color = Species)
+) +
+  geom_point( size = 2) +
+  labs(
+    title = "Sepal Length vs Petal Length by Species",
+    x = "Sepal Length",
+    y = "Petal Length"
+)
+```
+
+
+## Conclusion
+
+This vignette demonstrated how dplyr can be used to summarize iris measurements by species and how ggplot2 can be used to visualize differences among species. Overall, the three iris species show differences, especially in petal measurements.

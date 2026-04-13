@@ -1,0 +1,78 @@
+---
+title: "Tidyverse Vignette: Dplyr, Stringr & Ggplot2: Bechdel Test Dataset"
+author: "Emily El Mouaquite"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data
+
+The data used is the bechdel dataset from fivethirtyeight's library. The Bechdel Test measures representation for women in film. The three criteria of the test are: 
+
+1. The movie has at least two female characters that have names.
+2. The women in the movie talk to each other. 
+3. They talk about something other than a man.
+
+(https://bechdeltest.com/)
+
+The dataset contains information on movies from 1970 - 2013, whether they passed or failed the Bechdel Test, and their budgets/ how much they grossed. 
+
+Tidyverse, and its packages (specifically dplyr, ggplot2 and stringr) can be used to analyze and manipulate this data to explore Bechdel Test outcomes. 
+ 
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(fivethirtyeight) #install package if not already done so 
+#load dataset
+data("bechdel")
+```
+
+## Dplyr
+Dplyr can be used to take a look at the data, as well as subset and manipulate it.
+```{r}
+# View the columns and some observations
+glimpse(bechdel)
+# Subset data based on movies that have passed the test
+bechdel_pass <- bechdel %>%
+                  filter(binary == "PASS")
+#Add new variables 
+bechdel %>%
+  mutate(profit = domgross - budget)
+#Sort data (highest to lowest grossing movies)
+bechdel %>%
+  arrange(desc(domgross))
+#Group data to organize it (by year and why a movie passed or failed the test)
+bechdel_why <- bechdel %>%
+                  group_by(year, clean_test)
+# Calculate the number of movies in each year and Bechdel test category group where each group represents a combination of year and clean_test outcome
+summary_why <- bechdel_why %>%
+  summarize(n = n())
+```
+
+## Ggplot2
+Tidyverse's Ggplot2 can be used to create a line plot depicting the trends in the reasons why movies passed/ failed the Bechdel Test over time. 
+```{r}
+ggplot(summary_why, aes(x = year, y = n, color = clean_test)) +
+  geom_line() +
+  labs(
+    title = "Bechdel Test Outcomes Over Time",
+    x = "Year",
+    y = "Number of Movies",
+    color = "Test Result"
+  )
+```
+
+## Stringr
+Additionally, since much of this dataset does include text, stringr (along with dplyr) can be used to analuze movie titles and explore how certain words might relate to Bechdel Test outcomes.
+```{r}
+bechdel %>%
+  mutate(woman_related_title = str_detect(title, regex("girl|woman|she|her", ignore_case = TRUE))) %>%
+  group_by(binary, woman_related_title) %>%
+  summarize(n = n(), .groups = "drop")
+
+```
+

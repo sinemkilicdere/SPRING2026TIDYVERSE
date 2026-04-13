@@ -1,0 +1,73 @@
+---
+title: "Tidyverse Assignment: Vignette - Analyze Medical Insurance cost"
+date: "`r Sys.Date()`"
+format: html
+editor: visual
+---
+
+### Introduction
+
+This vignette demonstrates how to use the `dplyr` and `ggplot2` packages within the TidyVerse to manipulate, summarize, and visualize healthcare data. I am using a sample from the Kaggle "Medical Insurance Cost Dataset", which looks at patient demographics, health related variables and their billed insurance medical charges.
+
+### Source
+
+Kaggle data set: https://www.kaggle.com/datasets/mosapabdelghany/medical-insurance-cost-dataset
+
+### Loading the TidyVerse
+
+First, load the `tidyverse` library to access the data engineering and visualization tools and load data set csv from the raw url on SPRING2026 TIDYVERSE repository.
+
+```{r setup, message=FALSE}
+library(tidyverse)
+
+
+# Raw GitHub URL for the Kaggle insurance dataset
+
+medical_costs <- read_csv("https://raw.githubusercontent.com/meiqing39/SPRING2026TIDYVERSE/refs/heads/main/insurance.csv")
+
+# Let's take a look at the first few rows
+head(medical_costs)
+```
+
+### Data manipulation with dyplr
+
+```{r}
+# Using mutate(), case_when() function to categorize
+
+costs_summary <- medical_costs |> 
+  mutate(bmi_category = case_when(
+    bmi < 18.5 ~ "Underweight",
+    bmi >= 18.5 & bmi < 24.9 ~ "Normal",
+    bmi >= 25 & bmi < 29.9 ~ "Overweight",
+    bmi >= 30 ~ "Obese"
+  )) |> 
+  group_by(smoker, bmi_category) |>  #group_by() and summarise() for avg   medical charge based on if the patient is a smoker
+  summarise(avg_charge = mean(charges), 
+            patient_count = n(), 
+            .groups = "drop") |> 
+  arrange(desc(avg_charge))    #arrange() with desc() to see highest to lowest cost
+
+print(costs_summary)
+
+```
+
+**Based on the cost summary table, it is revealed that smoking heavily impact costs. I will build a scatterplot to better visualize the relationship between a patient's BMI and their billed charge using colors to differentiate between smokers and non-smokers**
+
+### Data Visualization using ggplot2
+
+```{r}
+ggplot(medical_costs, aes(x = bmi, y = charges, color = smoker)) +
+  geom_point(size = 3, alpha = 0.6) +
+  scale_color_manual(values = c("yes" = "green", "no" = "red")) +
+  labs(
+    title = "Medical Charges by BMI and Smoking Status",
+    subtitle = "Smokers generally face higher billed charges, especially at higher BMIs",
+    x = "BMI",
+    y = "Billed Charges Amount",
+    color = "Smoker?"
+  )
+```
+
+### Findings and wrap-up
+
+By utilizing dplyr functions like mutate(), case_when(), group_by(), and summarise (); I was able to clean the raw data that was obtained from the Kaggle website and isolate the financial impact of smoking and BMI. Furthermore, ggplot2 allowed me to translate those summaries into a clear scatter plot with just a few lines of code which revealed the primary finding: **smokers face much more higher billed medical charges than non-smokers, and this financial penalty compounds drastically as a patient's BMI increases.** Ultimately, this medical insurance dataset serves as a practical recipe for the collective TidyVerse book and demonstrates how to use raw demographics and transform that data into actionable medical insights.

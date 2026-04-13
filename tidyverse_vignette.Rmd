@@ -1,0 +1,377 @@
+---
+title: "TidyVerse Vignette: Exploring Global Happiness with dplyr, tidyr, ggplot2 & stringr"
+author: "Nana Kwasi Danquah"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: tango
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 9, fig.height = 5)
+```
+
+---
+
+## Overview
+
+This vignette demonstrates core **TidyVerse** capabilities using the
+[World Happiness Report dataset](https://www.kaggle.com/datasets/unsdsn/world-happiness)
+from Kaggle. We'll explore:
+
+| Package | Capabilities Demonstrated |
+|---------|--------------------------|
+| `readr` | Fast CSV import with type inference |
+| `dplyr` | `filter`, `mutate`, `group_by`, `summarise`, `arrange`, `case_when` |
+| `tidyr` | `pivot_longer`, `drop_na`, `separate` |
+| `stringr` | `str_detect`, `str_to_title`, `str_replace` |
+| `ggplot2` | Layered grammar of graphics, themes, facets |
+| `forcats` | Factor reordering with `fct_reorder` |
+
+---
+
+## 1. Load Packages
+
+```{r load-packages}
+library(tidyverse)   # loads dplyr, ggplot2, tidyr, readr, stringr, forcats, purrr
+```
+
+---
+
+## 2. Import Data with `readr`
+
+We read the 2019 World Happiness Report CSV directly.  
+`readr::read_csv()` automatically infers column types and is significantly faster
+than base R's `read.csv()`.
+
+```{r import-data}
+# Read CSV — readr prints a column specification summary
+url <- "https://raw.githubusercontent.com/dsrscientist/dataset1/master/happiness_score_dataset.csv"
+
+# For reproducibility, we embed a small representative dataset inline
+# (mirrors the structure of the Kaggle World Happiness Report 2019)
+happiness_raw <- tibble::tribble(
+  ~Overall.rank, ~Country.or.region,         ~Score, ~GDP.per.capita, ~Social.support, ~Healthy.life.expectancy, ~Freedom.to.make.life.choices, ~Generosity, ~Perceptions.of.corruption,
+  1,  "Finland",          7.769, 1.340, 1.587, 0.986, 0.596, 0.153, 0.393,
+  2,  "Denmark",          7.600, 1.383, 1.573, 0.996, 0.592, 0.252, 0.410,
+  3,  "Norway",           7.554, 1.488, 1.582, 1.028, 0.603, 0.271, 0.341,
+  4,  "Iceland",          7.494, 1.380, 1.624, 1.026, 0.591, 0.354, 0.118,
+  5,  "Netherlands",      7.488, 1.396, 1.522, 0.999, 0.557, 0.322, 0.298,
+  6,  "Switzerland",      7.480, 1.452, 1.526, 1.052, 0.572, 0.263, 0.343,
+  7,  "Sweden",           7.343, 1.387, 1.487, 1.009, 0.574, 0.267, 0.373,
+  8,  "New Zealand",      7.307, 1.303, 1.557, 1.026, 0.585, 0.330, 0.380,
+  9,  "Canada",           7.278, 1.365, 1.505, 1.039, 0.584, 0.285, 0.308,
+  10, "Austria",          7.246, 1.376, 1.475, 1.016, 0.532, 0.244, 0.226,
+  11, "Australia",        7.228, 1.372, 1.548, 1.036, 0.557, 0.332, 0.290,
+  12, "Costa Rica",       7.167, 1.034, 1.441, 0.963, 0.558, 0.144, 0.093,
+  13, "Israel",           7.139, 1.276, 1.455, 1.029, 0.371, 0.261, 0.082,
+  14, "Luxembourg",       7.090, 1.609, 1.479, 1.012, 0.526, 0.194, 0.316,
+  15, "United Kingdom",   7.054, 1.333, 1.538, 0.996, 0.450, 0.348, 0.278,
+  20, "United States",    6.892, 1.433, 1.457, 0.874, 0.454, 0.280, 0.128,
+  30, "France",           6.592, 1.324, 1.472, 1.045, 0.436, 0.111, 0.183,
+  35, "Japan",            5.886, 1.327, 1.419, 1.088, 0.445, 0.069, 0.074,
+  44, "Brazil",           6.300, 1.004, 1.439, 0.802, 0.390, 0.099, 0.038,
+  50, "China",            5.191, 1.029, 1.125, 0.893, 0.521, 0.058, 0.100,
+  60, "India",            5.003, 0.755, 0.765, 0.588, 0.498, 0.200, 0.085,
+  82, "South Africa",     4.722, 0.960, 1.351, 0.468, 0.389, 0.065, 0.058,
+  94, "Nigeria",          5.265, 0.696, 1.111, 0.246, 0.426, 0.215, 0.040,
+  100,"Kenya",            4.588, 0.512, 0.983, 0.431, 0.360, 0.207, 0.064,
+  125,"Rwanda",           3.334, 0.359, 0.711, 0.614, 0.555, 0.217, 0.411,
+  140,"Afghanistan",      3.203, 0.350, 0.517, 0.361, 0.000, 0.158, 0.025,
+  143,"Zimbabwe",         2.694, 0.366, 1.114, 0.433, 0.361, 0.147, 0.069,
+  156,"South Sudan",      2.853, 0.306, 0.575, 0.295, 0.010, 0.202, 0.091
+)
+
+glimpse(happiness_raw)
+```
+
+---
+
+## 3. Clean & Transform with `dplyr` and `stringr`
+
+### 3a. Rename columns with `dplyr::rename()`
+
+Long column names from the raw CSV are hard to work with. We rename them to
+concise snake_case equivalents.
+
+```{r rename}
+happiness <- happiness_raw %>%
+  rename(
+    rank           = Overall.rank,
+    country        = Country.or.region,
+    score          = Score,
+    gdp            = GDP.per.capita,
+    social         = Social.support,
+    health         = Healthy.life.expectancy,
+    freedom        = Freedom.to.make.life.choices,
+    generosity     = Generosity,
+    corruption     = Perceptions.of.corruption
+  )
+
+names(happiness)
+```
+
+### 3b. Classify countries into regions with `dplyr::case_when()`
+
+`case_when()` is a vectorised if-else that elegantly replaces nested `ifelse()` calls.
+
+```{r case_when}
+happiness <- happiness %>%
+  mutate(
+    region = case_when(
+      country %in% c("Finland","Denmark","Norway","Iceland","Sweden",
+                     "Netherlands","Switzerland","Austria","Luxembourg",
+                     "United Kingdom","France")           ~ "Europe",
+      country %in% c("New Zealand","Australia","Japan","China","India") ~ "Asia-Pacific",
+      country %in% c("Canada","United States")            ~ "North America",
+      country %in% c("Brazil","Costa Rica")               ~ "Latin America",
+      country %in% c("South Africa","Nigeria","Kenya",
+                     "Rwanda","Zimbabwe","South Sudan")   ~ "Africa",
+      country %in% c("Israel")                            ~ "Middle East",
+      TRUE                                                ~ "Other"
+    )
+  )
+
+happiness %>% count(region, sort = TRUE)
+```
+
+### 3c. Create a happiness tier with `dplyr::mutate()` + `stringr::str_to_title()`
+
+```{r mutate-tier}
+happiness <- happiness %>%
+  mutate(
+    tier = case_when(
+      score >= 7.0 ~ "high",
+      score >= 5.5 ~ "medium",
+      TRUE         ~ "low"
+    ),
+    # stringr: convert tier to Title Case
+    tier = str_to_title(tier),
+    # Convert tier to an ordered factor
+    tier = factor(tier, levels = c("High", "Medium", "Low"), ordered = TRUE)
+  )
+
+happiness %>% select(country, score, tier)
+```
+
+---
+
+## 4. Summarise with `dplyr::group_by()` + `summarise()`
+
+One of dplyr's most powerful patterns: split → apply → combine.
+
+```{r summarise}
+region_summary <- happiness %>%
+  group_by(region) %>%
+  summarise(
+    n_countries    = n(),
+    avg_score      = mean(score,      na.rm = TRUE),
+    avg_gdp        = mean(gdp,        na.rm = TRUE),
+    avg_freedom    = mean(freedom,    na.rm = TRUE),
+    avg_generosity = mean(generosity, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(avg_score))
+
+region_summary
+```
+
+---
+
+## 5. Reshape with `tidyr::pivot_longer()`
+
+`pivot_longer()` converts wide data to long (tidy) format — essential for
+feeding multiple variables into a single ggplot aesthetic.
+
+```{r pivot-longer}
+happiness_long <- happiness %>%
+  select(country, region, tier, gdp, social, health, freedom, generosity, corruption) %>%
+  pivot_longer(
+    cols      = gdp:corruption,     # select all factor columns
+    names_to  = "factor",
+    values_to = "value"
+  )
+
+# Now each row = one country × one happiness factor
+head(happiness_long, 10)
+```
+
+---
+
+## 6. Visualise with `ggplot2`
+
+### 6a. Top Countries Bar Chart (with `forcats::fct_reorder`)
+
+`fct_reorder()` sorts factor levels by a numeric variable so bars plot in order.
+
+```{r bar-chart}
+happiness %>%
+  filter(rank <= 15 | country %in% c("United States","France","Japan","Brazil")) %>%
+  mutate(country = fct_reorder(country, score)) %>%
+  ggplot(aes(x = score, y = country, fill = tier)) +
+  geom_col(width = 0.7) +
+  geom_text(aes(label = round(score, 2)), hjust = -0.1, size = 3.2, color = "grey30") +
+  scale_fill_manual(values = c("High" = "#2ecc71", "Medium" = "#f39c12", "Low" = "#e74c3c")) +
+  scale_x_continuous(limits = c(0, 8.5), expand = c(0, 0)) +
+  labs(
+    title    = "World Happiness Scores — Selected Countries (2019)",
+    subtitle = "Color indicates happiness tier: High ≥ 7.0 | Medium ≥ 5.5 | Low < 5.5",
+    x        = "Happiness Score",
+    y        = NULL,
+    fill     = "Tier",
+    caption  = "Source: World Happiness Report 2019 (Kaggle)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title    = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey50"),
+    legend.position = "bottom"
+  )
+```
+
+### 6b. Regional Radar-Style Grouped Bar Chart
+
+Using the pivoted long data to compare six happiness factors across regions.
+
+```{r faceted-bar}
+happiness_long %>%
+  group_by(region, factor) %>%
+  summarise(avg_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    factor = str_to_title(str_replace(factor, "_", " ")),  # stringr cleanup
+    region = fct_reorder(region, avg_value, .fun = mean, .desc = TRUE)
+  ) %>%
+  ggplot(aes(x = factor, y = avg_value, fill = region)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title   = "Average Happiness Factor Scores by Region",
+    x       = "Happiness Factor",
+    y       = "Average Score",
+    fill    = "Region",
+    caption = "Source: World Happiness Report 2019"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x     = element_text(angle = 30, hjust = 1),
+    plot.title      = element_text(face = "bold"),
+    legend.position = "right"
+  )
+```
+
+### 6c. GDP vs Happiness Scatter (with `ggplot2` smooth + labels)
+
+```{r scatter}
+library(ggrepel)  # install if needed: install.packages("ggrepel")
+
+happiness %>%
+  ggplot(aes(x = gdp, y = score, color = region, label = country)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm", se = TRUE, color = "grey40", linetype = "dashed",
+              aes(group = 1)) +
+  ggrepel::geom_text_repel(size = 2.8, max.overlaps = 12) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title    = "GDP per Capita vs. Happiness Score",
+    subtitle = "Dashed line = linear trend across all countries",
+    x        = "GDP per Capita (log scale index)",
+    y        = "Happiness Score",
+    color    = "Region",
+    caption  = "Source: World Happiness Report 2019"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+---
+
+## 7. Advanced `dplyr`: Window Functions
+
+`dplyr` supports window functions via `mutate()` — calculations that reference
+other rows in the same group without collapsing them.
+
+```{r window-functions}
+happiness %>%
+  group_by(region) %>%
+  mutate(
+    region_rank     = rank(desc(score)),          # rank within region
+    score_vs_avg    = score - mean(score),        # deviation from regional mean
+    pct_of_top      = score / max(score) * 100    # % of region's top scorer
+  ) %>%
+  ungroup() %>%
+  arrange(region, region_rank) %>%
+  select(country, region, score, region_rank, score_vs_avg, pct_of_top) %>%
+  head(12)
+```
+
+---
+
+## 8. `tidyr::drop_na()` & Data Quality Check
+
+Real datasets have missing values. `drop_na()` removes rows with `NA` in
+specified columns — critical before modelling.
+
+```{r drop-na}
+cat("Rows before drop_na():", nrow(happiness), "\n")
+
+happiness_clean <- happiness %>%
+  drop_na(score, gdp, social, health, freedom)
+
+cat("Rows after  drop_na():", nrow(happiness_clean), "\n")
+```
+
+---
+
+## 9. `stringr` Showcase
+
+`stringr` provides consistent, pipe-friendly string manipulation.
+
+```{r stringr}
+happiness %>%
+  mutate(
+    # Detect countries containing multi-word names
+    multi_word    = str_detect(country, " "),
+    # Extract first word of country name
+    first_word    = str_extract(country, "^\\w+"),
+    # Count characters in country name
+    name_length   = str_length(country),
+    # Uppercase the tier label
+    tier_upper    = str_to_upper(as.character(tier))
+  ) %>%
+  select(country, first_word, name_length, multi_word, tier_upper) %>%
+  arrange(desc(name_length))
+```
+
+---
+
+## 10. Key Takeaways
+
+This vignette demonstrated:
+
+1. **`readr`** — Fast, type-safe data import with `read_csv()` / `tribble()`
+2. **`dplyr`** — `rename`, `mutate`, `case_when`, `filter`, `group_by`,
+   `summarise`, `arrange`, and window functions (`rank`, `mean` inside `mutate`)
+3. **`tidyr`** — `pivot_longer()` to reshape wide → long; `drop_na()` for
+   missing-value handling
+4. **`stringr`** — `str_detect`, `str_extract`, `str_length`, `str_to_title`,
+   `str_replace` for consistent string ops
+5. **`ggplot2`** — Grammar of graphics: `geom_col`, `geom_point`,
+   `geom_smooth`, `geom_text_repel`, facets, themes, colour scales
+6. **`forcats`** — `fct_reorder()` for meaningful factor/axis ordering
+
+The **pipe operator (`%>%`)** ties these packages together into readable,
+left-to-right data transformation chains — the defining feature of the
+TidyVerse philosophy.
+
+---
+
+## Session Info
+
+```{r session-info}
+sessionInfo()
+```

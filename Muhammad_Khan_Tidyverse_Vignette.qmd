@@ -1,0 +1,138 @@
+---
+title: "Tidying and Analyzing Netflix Titles with TidyVerse"
+author: "Muhammad Suffyan Khan"
+format: html
+date: "04/12/2026"
+---
+
+```{r}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+## Overview
+
+This vignette demonstrates how to use TidyVerse packages (`dplyr`, `tidyr`, and `ggplot2`) to clean, transform, and analyze a real-world dataset. The focus is on handling multi-value categorical data and producing meaningful summaries.
+
+## Dataset
+
+The dataset used is the Netflix Movies and TV Shows dataset from Kaggle. It contains information such as title, content type (Movie or TV Show), country, release year, rating, duration, and genre categories stored in the `listed_in` column.
+
+## Load Libraries
+
+```{r}
+library(tidyverse)
+```
+
+## Load Dataset
+
+```{r}
+netflix <- read_csv("netflix_titles_nov_2019.csv")
+```
+
+## Preview Data
+
+```{r}
+glimpse(netflix)
+```
+
+## Select Relevant Columns
+
+```{r}
+netflix_clean <- netflix %>%
+  select(show_id, type, title, country, release_year, rating, duration, listed_in) %>%
+  drop_na(type, listed_in)
+```
+
+## Count Content Types
+
+```{r}
+netflix_clean %>%
+  count(type)
+```
+
+## Tidy the Genre Column
+
+The `listed_in` column contains multiple genres separated by commas.
+We convert it into a tidy format using `separate_rows()`.
+
+```{r}
+netflix_genres <- netflix_clean %>%
+  separate_rows(listed_in, sep = ",\\s*")
+```
+
+## Top 10 Genres
+
+```{r}
+top_genres <- netflix_genres %>%
+  count(listed_in, sort = TRUE) %>%
+  slice_head(n = 10)
+
+top_genres
+```
+
+## Visualize Top Genres
+
+```{r}
+ggplot(top_genres, aes(x = reorder(listed_in, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Netflix Genres",
+    x = "Genre",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Genres by Content Type
+
+```{r}
+genre_by_type <- netflix_genres %>%
+  count(type, listed_in, sort = TRUE) %>%
+  group_by(type) %>%
+  slice_max(n, n = 5) %>%
+  ungroup()
+
+genre_by_type
+```
+
+## Visualization by Type
+
+```{r}
+ggplot(genre_by_type, aes(x = reorder(listed_in, n), y = n, fill = type)) +
+  geom_col() +
+  coord_flip() +
+  facet_wrap(~type) +
+  theme_minimal()
+```
+
+## Titles by Release Year
+
+```{r}
+titles_by_year <- netflix_clean %>%
+  count(release_year) %>%
+  filter(release_year >= 2000)
+
+ggplot(titles_by_year, aes(x = release_year, y = n)) +
+  geom_line() +
+  labs(
+    title = "Netflix Titles by Release Year",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Conclusion
+
+This vignette demonstrated how to:
+
+* Clean and filter data using `dplyr`
+* Convert multi-value columns into tidy format using `tidyr`
+* Summarize categorical data
+* Create visualizations using `ggplot2`
+
+These techniques are useful when working with real-world datasets that require restructuring before analysis.
+
+```
+
