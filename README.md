@@ -279,6 +279,13 @@ Initial Description and Link:
 This vignette demonstrates how to import raw healthcare data and engineer new categorical features (BMI) to analyze cost drivers. Using dplyr to manipulate the data and then with ggplot2 to generate a scatter plot, we can visualize the compounding financial penalty of smoking and higher body mass index.
 **Link to Vignette:** [Medical_Costs_Vignette.Rmd](Medical_Costs_Vignette.Rmd) 
 
+TidyExtend:
+* **Original Vignette Title:** Muhammad_Ahmad_Vignette
+* **Original Author:** Muhammad Ahmad
+* **Dataset:** Coffee Sales Dataset
+* **Additions:** * **New Functions Used:** `lubridate::hour()`, `dplyr::case_when()`, `tidyr::pivot_wider()`, `dplyr::slice_max()`, `ggplot2::facet_wrap()`
+* **Link to Updated Vignette:** https://github.com/meiqing39/SPRING2026TIDYVERSE/blob/c037d6961652799be9c9e907c2d46b6139fc0ba1/MAhmad_Extended_MeiQiNg_Vignette.Rmd.RMD
+
 # Michael M
 Initial Description and Link:
 
