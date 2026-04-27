@@ -347,9 +347,9 @@ Initial Description and Link:
 Revision/Addition Description and Link:
 
 # Samantha B
-Initial Description and Link:
+Initial Description and Link: stringr demo, https://github.com/acatlin/SPRING2026TIDYVERSE/pull/11/changes/f0e79af7598a1bcb2ee17b27ca286814918d8bfa
 
-Revision/Addition Description and Link:
+Revision/Addition Description and Link: https://github.com/samanthabarbaro/SPRING2026TIDYVERSE/blob/main/LongLinTidyVerseCreate.qmd
 
 # Shawn I
 Initial Description and Link:
