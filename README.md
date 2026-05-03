@@ -96,6 +96,8 @@ Initial Description and Link:
 
 [Github-David C-Data607-Week9-TidyVerse](https://github.com/dyc-sps/SPS_Data607_Week9_TidyVerse)
 
+[TidyVerse Extend](David.C/Ciara_Bonnett_Vignette_Extend_By_DC.Rmd)
+
 Revision/Addition Description and Link:
 
 # David O
