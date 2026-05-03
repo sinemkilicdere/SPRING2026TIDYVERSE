@@ -370,10 +370,15 @@ Initial Description and Link:
 Revision/Addition Description and Link:
 
 # Muhammad A
-Initial Description and Link:
-
+Initial Description and Link: Exploring cafe data set
+https://github.com/acatlin/SPRING2026TIDYVERSE/blob/main/Muhammad_Ahmad_Vignette.RMD
 Revision/Addition Description and Link:
-
+TidyExtend:
+* **Original Vignette Title:** MeiQiNG_Vignette
+* **Original Author:** MeiQi Ng
+* **Dataset:** insurance-cost-dataset
+* **Additions:** * **Futher exploration and analysis 
+* **Link to Updated Vignette:** [https://github.com/meiqing39/SPRING2026TIDYVERSE/blob/c037d6961652799be9c9e907c2d46b6139fc0ba1/MAhmad_Extended_MeiQiNg_Vignette.Rmd.RMD](https://github.com/MuhammadAhmad0006/SPRING2026TIDYVERSE/blob/main/M.Ahmad_EXTEND_MeiQiNg_vignette.qmd)
 # Muhammad S
 Initial Description and Link:
 
