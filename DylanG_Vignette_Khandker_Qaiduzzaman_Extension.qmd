@@ -1,0 +1,249 @@
+---
+title: "TidyVerse EXTEND Assignment - Grocery Inflation Analysis"
+author: "Dylan Gold (Original) + Khandker Qaiduzzaman (Extension)"
+format: html
+editor: visual
+---
+
+# Introduction
+
+This project will demonstrate some of the core packages within in the tidyverse collection.\
+This project will focus on using dplyr to help restructure our data, as well as ggplot which will help us create visualizations our data set.\
+The data set used to display some of these core packages is a data set found from Kaggle containing global grocery inflation for several common foods over the last several months(from 10-2025).\
+The data set can be found at https://www.kaggle.com/datasets/waddahali/global-grocery-inflation-20252026\
+
+# Codebase
+
+Load the tidyverse.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse) # load tidyverse library (installed prior)
+```
+
+## Importing the data
+
+First we import the data using read_csv. This is actually a tidyverse function from the readr package.
+
+```{r message=FALSE}
+url <- "https://raw.githubusercontent.com/DylanGoldJ/SPRING2026TIDYVERSE/refs/heads/main/FoodData.csv"
+df <- read_csv(
+  file = url,
+  col_names = TRUE
+)
+
+head(df, 8)
+```
+
+## Using dplyr
+
+### Filter
+
+We can use dplyr to sort our data and select rows based on specific features. Lets say we want to focus on Chicago as our city.\
+We can use filter to filter our rows for Chicago as a city.\
+We can display this with the head and see that we created a new data frame for our rows with Chicago.
+
+```{r}
+chicago <- df %>% 
+  filter(City == "Chicago")
+
+head(chicago)
+```
+
+### Select
+
+There are many columns, some of which we do not need. We can use select to pick out certain columns that we want.\
+We can create a list to put as the column values we want. We will also use dplyr's all_of to convert our list to a character vector for the select.\
+This can also change the order of the columns
+
+```{r}
+col_values <- c("Month", "Item", "City", "Country", "Price_USD", "Exchange_Rate", "Currency_Local" )
+
+short_df <- df %>% select(all_of(col_values))
+head(short_df)
+```
+
+### Mutate
+
+We have the Price_USD column as well as Exchange_rate. Using our shortened data frame we can use dplyrs mutate function to create new columns.\
+By dividing the USD price by the exchange rate we can create a local currency amount. We can create a new column for this value.
+
+```{r}
+short_df <- short_df %>%
+  mutate(Price_local = Price_USD/Exchange_Rate)
+
+head(short_df)
+```
+
+### Group_by
+
+Lets say we want to find the global average price of an item in USD for each month.\
+We can use group_by() with some of the other previously shown dplyr functions to do this.\
+We can first group by both the month and the item while getting the average value.\
+We also need to create a new column with mutate and we can use the aggregate function mean() inside of a groupby to get the average.\
+Finally we can select the columns we need which is just the month, item and average price. We can chain subsequent function calls with the %\>% operator.\
+
+```{r}
+global_avg <- short_df %>%
+  group_by(Month, Item) %>%
+  mutate(average_price_USD = mean(Price_USD)) %>%
+  select("Month", "Item", "average_price_USD") %>%
+  ungroup() # Ungroup when done 
+
+head(global_avg, 8)
+```
+
+If we wanted to see specific items we could use filter to see with this data frame. For example we can take a look at the price of eggs
+
+```{r}
+global_avg %>%
+  filter(Item == "Eggs (Regular, 12)") %>%
+  head()
+
+```
+
+Lets try another example.\
+Lets get the average price of each item for each month by country\
+
+```{r}
+avg_by_country <- short_df %>%
+  group_by(Month, Item, Country) %>%
+  mutate(average_price_USD = mean(Price_USD)) %>%
+  select("Month", "Item", "Country", "average_price_USD") %>%
+  ungroup()
+
+head(avg_by_country, 8)
+```
+
+Now we have a data frame containing the average price of each item in each month for each country.\
+Lets say we want to see changes in each item for the United States.\
+A data frame has all the data but does not display it well. For this we will use ggplot. I will create a new data frame for ggplot here with dplyr, using filter to focus on the United States.\
+We also can convert the month from a character to a date type to better graph it with ggplot.\
+We can use mutate to not only make new columns, but modify old ones.\
+I will also use select to un-select the country column now that we just have a single column.
+
+```{r}
+us_avg_prices <- avg_by_country %>%
+  filter(Country == "United States") %>%
+  select(-Country) %>%# By using - we can also just remove certain column(s) if needed
+  mutate(Month = as.Date(paste0(Month, "-01"), format("%Y-%m-%d"))) # Add -01 to end of date(default to first), then convert with given format to date type
+head(us_avg_prices)
+```
+
+## Using ggplot
+
+By using ggplot we can create a graph for this information. We previously created a data frame that can be easily plotted.\
+We can use %\>% to pipe our data frame into the ggplot function\
+X axis is the months.\
+Y axis is the price.\
+We can set the group and color equal to the different items.
+
+```{r}
+us_avg_prices %>% 
+ggplot(aes(x = Month, y = average_price_USD, group = Item, color = Item)) + # Call ggplot with aes describing the different axis and groups
+  geom_line() + # Line plot
+  geom_point() + # Add dots for each point
+  # Labels
+  labs(title = "Average Price of Selected Groceries in The United States",
+        x = "Month",
+        y = "Average Price (USD)")
+
+```
+
+We have now created a time plot using ggplot that takes advantage of having a date type as an x axis as well as creating different lines for different groups of values within a column.
+
+# Khandker Qaiduzzaman Extension
+
+### 1. Top 10 Most Expensive Grocery Items Globally
+
+This extension uses group_by() and summarise() to calculate average prices worldwide.
+
+Beef Round (1 kg) has the highest average global price at over \$17, followed by Local Cheese at around \$11.55 and Chicken Fillets at \$8.38, making meat and dairy products the most expensive items. In contrast, fruits and vegetables such as Bananas and Onions average close to \$2, showing that staple produce remains relatively affordable compared to protein-based foods. Overall, the chart highlights a clear price gap between animal-based products and everyday grocery staples.
+
+```{r}
+top_items <- df %>%
+  group_by(Item) %>%
+  summarise(avg_price = mean(Price_USD, na.rm = TRUE)) %>%
+  arrange(desc(avg_price)) %>%
+  slice_head(n = 10)
+
+ggplot(top_items, aes(x = reorder(Item, avg_price), y = avg_price, fill = Item)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Most Expensive Grocery Items Globally",
+    x = "Food Item",
+    y = "Average Price (USD)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### 2. Price Volatility of Essential Grocery Items Across Global Markets
+
+This analysis examines the relative price volatility of commonly purchased grocery items by comparing their standard deviation to their mean price. The results show that basic staples such as onions, rice, and tomatoes exhibit the highest volatility, indicating that even essential food items can experience significant price fluctuations across time and locations. In contrast, items like bananas and oranges show relatively lower volatility, suggesting more stable pricing. Overall, the findings highlight that affordability does not always equate to price stability, especially for essential food commodities.
+
+```{r}
+food_volatility <- df %>%
+  group_by(Item) %>%
+  summarise(
+    mean_price = mean(Price_USD, na.rm = TRUE),
+    sd_price = sd(Price_USD, na.rm = TRUE),
+    volatility = sd_price / mean_price,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(volatility)) %>%
+  slice_head(n = 10)
+
+ggplot(food_volatility, aes(x = reorder(Item, volatility), y = volatility, fill = Item)) +
+  geom_segment(aes(x = Item, xend = Item, y = 0, yend = volatility), color = "grey75") +
+  geom_point(size = 4, shape = 21, color = "black") +
+  geom_text(aes(label = round(volatility, 2)), 
+            hjust = -0.2, size = 3) +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set3") +
+  labs(
+    title = "Most Volatile Grocery Prices (Top 10 Items)",
+    x = "Food Item",
+    y = "Price Volatility (SD / Mean)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### 3. Global Comparison of Grocery Basket Cost and Item Price Levels Across Cities
+
+This analysis compares the average cost of a standardized grocery basket and individual item prices across major global cities. The results show that cities like Vancouver, Toronto, and Hong Kong have the highest grocery basket costs, exceeding \$19 on average, indicating a higher overall cost of living for basic food items. In contrast, cities such as Los Angeles, San Francisco, and Oslo show relatively lower basket costs. The pattern suggests that grocery affordability varies significantly across global cities, reflecting broader differences in local pricing structures and economic conditions.
+
+```{r}
+city_cost <- df %>%
+  group_by(City) %>%
+  summarise(
+    avg_basket = mean(Breakfast_Basket_USD, na.rm = TRUE),
+    avg_item_price = mean(Price_USD, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(avg_basket))
+
+top_cities <- df %>%
+  group_by(City) %>%
+  summarise(avg_basket = mean(Breakfast_Basket_USD, na.rm = TRUE)) %>%
+  arrange(desc(avg_basket)) %>%
+  slice_head(n = 10)
+
+ggplot(top_cities, aes(x = reorder(City, avg_basket), y = avg_basket, fill = avg_basket)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_fill_gradient(low = "lightblue", high = "darkred") +
+  labs(
+    title = "Most Expensive Cities for Grocery Basket",
+    x = "City",
+    y = "Average Breakfast Basket Cost (USD)"
+  ) +
+  theme_minimal()
+```
+
+# Conclusion
+
+In this extension, we further demonstrated the capabilities of the tidyverse by applying `dplyr` to aggregate and transform the dataset at both the category and city levels. In addition to filtering, selecting, and grouping data, we introduced new analytical perspectives such as volatility measurement, inflation sensitivity, and cross-city cost comparisons. Using `ggplot2`, we visualized these insights through ranked bar charts and gradient-based visualizations, which made it easier to interpret differences in grocery affordability across items, categories, and cities.
+
+Overall, this expanded analysis shows that grocery prices vary not only over time but also significantly across locations and food categories, highlighting broader cost-of-living differences. Future work could extend this analysis by incorporating more cities, longer time periods, and additional economic indicators to better understand global food price dynamics and inflation behavior.

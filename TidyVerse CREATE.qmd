@@ -1,0 +1,143 @@
+---
+title: "TidyVerse Assignment"
+author: "Denise Atherley"
+format: html
+editor: visual
+---
+
+## Approach:
+
+For this assignment I will be choosing a publicly available dataset and creating a programming sample "vignette" that demonstrates how to use one or more of the capabilities available in the TidyVerse package.
+
+### Dataset selection -
+
+For my dataset, I searched the kaggle website for options that I found interesting. I was able to narrow it down to a dataset that highlighted blood pressure levels by age. As someone who struggled with high blood pressure in the past, I was very much interested.
+
+**Dataset Context:** The [Blood Pressure by Age — Global Dataset](https://www.kaggle.com/datasets/zkskhurram/blood-pressure-by-age-global-dataset) contains over 8,000 patient records across 80+ countries. It features rich demographic and clinical classifications, including `Age_Group`, `Sex`, `WHO_Region`, and individual blood pressure measurements.
+
+**Objective:** Demonstrate how to load, clean, summarize, and visualize health data using Tidyverse packages.
+
+## Code:
+
+I will load the tidyverse package that automatically includes readr, dplyr, ggplot2 and other core packages. Then I'll include my dataset in a public repository and use read_csv() to ingest the raw data.
+
+```{r}
+#| echo: true
+# Load package
+library(tidyverse)
+
+```
+
+```{r}
+#| echo: true
+# Load dataset
+url<-"https://raw.githubusercontent.com/DRA-SPS27/DATA-607-Tidyverse/refs/heads/main/blood_pressure_global_dataset.csv"
+
+# Create dataframe of raw dataset
+bp_raw<-read_csv(url)
+
+# Inspect the structure of the dataset
+glimpse(bp_raw)
+
+
+```
+
+### Data Transformation -
+
+In order to generate meaningful insights, I will need to filter and summarize the data. I will create a pipeline using the pipe operator (%\>%) to calculate the average Systolic and Diastolic Blood Pressure grouped by Age and Sex. I will also gather the total count of patients and generate the percentage with hypertension.
+
+```{r}
+#| echo: true
+
+# Create a new dataframe that excludes any records where Age_Group or Sex is missing
+  bp_summary <- bp_raw %>%
+      filter(!is.na(Age_Group), !is.na(Sex)) %>%
+  
+# Group dataset by Age and Sex
+  group_by(Age_Group, Sex) %>%
+  
+# Calculate the averages and count of patients in each group
+  summarize(
+      Avg_Systolic = mean(Systolic_BP_mmHg, na.rm = TRUE),
+      Avg_Diastolic = mean(Diastolic_BP_mmHg, na.rm = TRUE),
+      Patient_Count = n(), 
+      .groups = 'drop' # Drops the grouping structure after summarizing
+  ) %>%
+  
+# Sort results by age group chronologically instead of alphabetically for easier reading
+  arrange(as.numeric(str_extract(Age_Group, "\\d+")))
+
+# View summarized table
+  print(bp_summary)
+  
+```
+
+```{r}
+# Find percentage of hypertensive patients
+hypertension_analysis <- bp_raw %>%
+  group_by(WHO_Region, BP_Category) %>%
+  summarize(
+    Total_Patients = n(),
+    Hypertensive_Count = sum(BP_Category %in% c("Hypertension Stage 1","Hypertension Stage 2", "Hypertensive Crisis", na.rm = TRUE)),
+  Hypertension_Rate = (Hypertensive_Count/Total_Patients) * 100,
+  .groups = "drop"
+)
+print(hypertension_analysis)
+```
+
+### Data Visualization -
+
+Now that the data has been cleaned and aggregated, the package `ggplot2` can be used to map these variables to visual aesthetics. I will create a clustered bar chart to compare Average Systolic Blood Pressure between Males and Females across different Age Groups. I will also create a bar chart to see with countries have the highest blood pressure rates based on the World Health Organization's definition of hypertension and will represent the values in percentages.
+
+```{r}
+# Update the factor levels of Age_Group so ggplot knows the correct order(chronological as opposed to the dedault alphabetical)
+    bp_summary_plot <- bp_summary %>%
+      mutate(
+        Age_Group = fct_reorder(Age_Group, as.numeric(str_extract(Age_Group, "\\d+")))
+      )
+# Create a plot using the summarized dataset
+    ggplot(data = bp_summary_plot, aes(x = Age_Group, y = Avg_Systolic, fill = Sex)) +
+  
+# geom_ool creates bars; position = "dodge" places the male/female bars side by side
+    geom_col(position = "dodge", alpha = 0.85) +
+      
+# Add a minimalistic theme
+    theme_minimal() +
+
+# Apply clear labels and titles
+    labs(
+      title = "Average Systolic Blood Pressure by Age Group and Sex",
+      subtitle = "Based on Kaggle Global Blood Pressure Dataset",
+      x = "Age Group",
+      y = "Average Systolic BP(mmHg)",
+      fill = "Patient's Sex",
+      caption = "Data Source: Kaggle (zkskhurram)"
+    ) +
+      
+# Customize axis text so long Age Group labels don't overlap
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+      plot.title = element_text(face = "bold", size = 14)
+   )
+```
+
+```{r}
+
+ggplot(data = hypertension_analysis, aes(x = WHO_Region, y = Total_Patients, fill = BP_Category)) +
+  geom_col(position = "dodge", alpha = 0.85) +
+  theme_minimal() +
+  labs(
+    title = "Blood Pressure Category per Region",
+    subtitle = "Based on Kaggle Global Blood Pressure Dataset",
+    x = "World Health Organization Region",
+    y = "Number of Patients",
+    fill = "Blood Pressure Category",
+    caption = "Data Source: Kaggle (zkskhurram)"
+  ) +
+  # Formats the WHO Region text so long names don't overlap with each other
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Conclusion:
+
+Based on the visualizations produced, Females who are overly elderly (80+) have the highest blood pressure rates. When it comes to region, the Western Pacific has among the highest blood pressure rates when compared to other regions highlighted by the World Health Organization. An interesting observation I noticed is that on average Males tended to have higher blood pressure rates than women during their adult lives but then it starts to shift later in life and Females tended to show higher rates. It made me curious if other variables contributed to this shift and if social or cultural influences made a difference.
