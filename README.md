@@ -401,6 +401,21 @@ The vignette focuses on the `listed_in` column, which contains multiple genres i
 
 Revision/Addition Description and Link:
 
+### TidyVerse EXTEND Assignment:
+
+**Original Vignette Extended:** Zihao Yu's `zihao_iris_vignette.Rmd`
+
+**Extension File:** `Muhammad_Khan_Extended_Zihao_Iris_Vignette.qmd`
+
+**Extension Description:**  
+This extension adds feature engineering to the original iris vignette by creating petal and sepal ratio variables, estimated petal and sepal area variables, grouped summaries by species, and additional visualizations.
+
+**Additional TidyVerse Functions Used:**  
+`mutate()`, `summarise()`, `arrange()`, `pivot_longer()`, `select()`, `ggplot()`, `geom_col()`, and `geom_boxplot()`.
+
+**Summary of Extension:**  
+The original vignette summarized and visualized the standard iris measurements. This extension adds new engineered variables to compare species using length-width ratios and estimated measurement areas, providing a deeper example of how TidyVerse tools can expand an existing analysis.
+
 # Nana Kwasi D
 Initial Description and Link:
 
