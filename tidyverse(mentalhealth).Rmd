@@ -316,5 +316,34 @@ As for ggplot2 — here's a quick recap of everything we used:
 *Dataset: [Kaggle – Student Mental Health and Burnout](https://www.kaggle.com/datasets/sharmajicoder/student-mental-health-and-burnout)*
 ---
 
+### Extended by Radzhana Rabdanova
 
+
+# In this section, I will extend the previous analysis by:
+# 1. Filtering out unrealistic age values.
+# 2. Grouping the data by treatment status and family history.
+# 3. Visualizing the results using a bar chart.
+
+library(dplyr)
+library(ggplot2)
+
+# Assuming the dataframe is named 'data' or 'df' (based on the original code)
+# Let's clean and summarize the data
+mental_health_summary <- data %>%
+  filter(Age > 10 & Age < 80) %>% # Focus on a realistic age range
+  group_by(treatment, family_history) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Create a clear visualization
+ggplot(mental_health_summary, aes(x = treatment, y = count, fill = family_history)) +
+  geom_col(position = "dodge") +
+  theme_minimal() +
+  labs(
+    title = "Treatment Seeking vs. Family History",
+    subtitle = "Analysis of mental health data using TidyVerse",
+    x = "Did they seek treatment?",
+    y = "Number of respondents",
+    fill = "Family History"
+  ) +
+  scale_fill_brewer(palette = "Set2") # Make colors look professional
 
