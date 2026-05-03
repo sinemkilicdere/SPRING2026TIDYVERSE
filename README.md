@@ -525,7 +525,12 @@ https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i5
 File: data607_tidyverse.html, data607_tidyverse.qmd
 
 Revision/Addition Description and Link:
-main
+Extended the Airline Passenger Satisfaction vignette by adding:
+- Additional analysis comparing satisfaction rates by customer class (Business, Eco, Eco Plus)
+- Improved visualization with better formatting, percentages, and color
+- A conclusion interpreting how service class impacts customer satisfaction
+
+File: tamnatz_airline_vignette_extension.R
 
 #Samanthabarbaro
 Initial Description and Link: stringr demo, https://github.com/acatlin/SPRING2026TIDYVERSE/pull/11/changes/f0e79af7598a1bcb2ee17b27ca286814918d8bfa
