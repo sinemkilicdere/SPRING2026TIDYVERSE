@@ -1,0 +1,115 @@
+---
+title: "Tidyverse Create"
+author: "Sam Barbaro"
+format: html
+editor: visual
+---
+
+## Stringr Package
+
+<https://stringr.tidyverse.org/>
+
+Correct punctuation is very important to me, so I've decided to explore the Tidyverse's Stringr package, which allows you to manipulate strings.
+
+I'm using a jobs data set from NYC open data to demonstrate some of the cleaning capabilities.
+
+```{r}
+library(tidyverse)
+
+csv <- "https://raw.githubusercontent.com/samanthabarbaro/data607/refs/heads/main/nyc_jobs.csv"
+
+jobs <- read.csv(csv, header = TRUE)
+
+glimpse(jobs)
+```
+
+### str_replace
+
+I don't like that the column names have periods instead of underscores (who would do that?) . Let's replace them with str_replace:
+
+```{r}
+jobs <- jobs %>%
+  rename_with(~ str_replace(.x, "\\.", "_"))
+```
+
+### Changing case
+
+The agencies are in all caps. Let's use the string to title function to change them to title case:
+
+```{r}
+jobs <- jobs |> 
+  mutate(Agency = str_to_title(Agency))
+
+```
+
+Let's use str_to_lower on business title to make all the jobs lowercase.
+
+```{r}
+jobs <- jobs |> 
+  mutate(Business_Title = str_to_lower(Business_Title))
+```
+
+You can also use str_to_upper for uppercase and str_to_sentence for title case.
+
+```{r}
+jobs <- jobs |> 
+  mutate(Posting_Type = str_to_upper(Posting_Type)) |>
+  mutate(Title_Classification = str_to_sentence(Title_Classification))
+```
+
+### str_count
+
+str_count lets you count anything that includes a certain string. Some of these functions work as-is on vectors, but require "regex" when used with data frames:
+
+```{r}
+jobs_with_counts <- jobs |> 
+    mutate(data_mentions = str_count(Business_Title, regex("data")))
+```
+
+### str_like
+
+str_like - detect string matches in a vector or specified column. Here, we use it to create a new data frame with data jobs:
+
+```{r}
+data_jobs <- jobs |> 
+  filter(str_detect(Business_Title, regex("data", ignore_case = TRUE)))
+```
+
+For two or more matches, use a pipe inside the quotes:
+
+```{r}
+legal_jobs <- jobs |> 
+  filter(str_detect(Business_Title, regex("lawyer|attorney|paralegal", ignore_case = TRUE)))
+```
+
+### str_split
+
+str_split breaks up a vector or column based on a specified character. We'll break the "Career_Level" column at a an open parentheses to get rid of extra information:
+
+```{r}
+jobs_split <- jobs |>
+  mutate(seniority = str_split_i(Career_Level, " \\(", 1))
+```
+
+### str_order
+
+Str_order is designed for vectors, but can be used as an alternative to dplyr's arrange:
+
+```{r}
+# Sorting legal_jobs by Business_Title alphabetically
+ordered_indices <- str_order(legal_jobs$Business_Title)
+legal_jobs_sorted <- legal_jobs[ordered_indices, ]
+
+# with dplyr
+legal_jobs_sorted_2 <- legal_jobs |> arrange(Agency)
+```
+
+### str_equal
+
+str_equal can detect and subset exact matches:
+
+```{r}
+# Find jobs where the title is EXACTLY "Paralegal" (case sensitive)
+agency_attorneys_only <- legal_jobs |> 
+  filter(str_equal(Business_Title, "agency attorney"))
+```

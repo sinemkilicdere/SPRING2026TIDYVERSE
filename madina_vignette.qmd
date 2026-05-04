@@ -1,0 +1,94 @@
+---
+title: "lubridate_vignette"
+author: "Madina Kudanova"
+format: html
+editor: visual
+---
+
+## Introduction
+
+This vignette is a basic demo of how to work with date data using the \`lubridate\` package on a small dataset. We will convert text into dates, extract the month, and summarize observations by month.\
+\
+
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+## Create Example Data
+
+```{r}
+data <- tibble(
+  date = c("2025-01-05", "2025-02-10", "2025-02-15", "2025-03-01", "2025-03-10")
+)
+
+data
+```
+
+## Convert Text to Dates
+
+The date column is currently stored as text.\
+
+The ymd() function converts it into a proper date format.
+
+```{r}
+data <- data %>%
+  mutate(date = ymd(date))
+
+data
+```
+
+## Check For Duplicate Dates
+
+```{r}
+data %>%
+  summarise(
+    total_rows = n(),
+    unique_dates = n_distinct(date)
+  )
+```
+
+## Extract the Month
+
+We can now extract the month from each date.\
+
+Using label = TRUE returns abbreviated month names.
+
+```{r}
+data <- data %>%
+  mutate(month = month(date, label = TRUE))
+
+data
+```
+
+## Summarize by Month
+
+Next, we group the data by month and count how many rows fall into each month using n().
+
+```{r}
+summary_table <- data %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+summary_table
+```
+
+## Visualize the Results
+
+```{r}
+ggplot(summary_table, aes(x = month, y = count)) +
+  geom_col() +
+  labs(
+    title = "Count of Dates/Rows per Month",
+    x = "Month",
+    y = "Count"
+  )
+```
+
+## Conclusion
+
+This example shows how lubridate can be used with Tidyverse tools to convert text into dates, extract meaningful components like months, and summarize data over time. Specifically, we use the ymd() function to convert character values into Date objects and the month() function to extract the month from each date.
+
+## 
+
+##  

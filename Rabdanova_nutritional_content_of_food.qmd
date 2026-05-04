@@ -1,0 +1,68 @@
+---
+title: "The Nutritional Content of Food"
+author: "Radzhana Rabdanova"
+format: html
+editor: visual
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+# Load necessary library
+library(tidyverse)
+
+#Introduction
+#In this "mini-case," I demonstrate the use of the TidyVerse ecosystem to analyze the nutritional content of various food items using the USDA National Nutrient Database. The goal is to explore the relationship between calorie density and sugar content.
+
+#Data Loading and Cleaning
+#We start by loading the dataset and performing initial cleaning tasks such as renaming columns for better readability and filtering out extreme values.
+
+# 1. Path Management
+# Note: When submitting to GitHub, ensure ABBREV.csv is in the same folder as this script.
+file_path <- "C:\\Users\\radzh\\OneDrive\\Desktop\\data 607\\TidyVerse CREATE\\archive (4)\\ABBREV.csv" 
+
+# 2. Loading the dataset
+# Using read_csv from the readr package (part of TidyVerse)
+nutrition_df <- read_csv(file_path, show_col_types = FALSE)
+
+# 3. Data Transformation and Cleaning
+# Using dplyr to select, rename, and filter data
+cleaned_nutrition <- nutrition_df %>%
+  select(
+    Main_Food_Description = Shrt_Desc, 
+    Calories = Energ_Kcal, 
+    Protein = `Protein_(g)`, 
+    Sugar = `Sugar_Tot_(g)`,
+    Fat = `Lipid_Tot_(g)` # Updated to match USDA internal naming convention
+  ) %>%
+  # Focus on standard food items by filtering energy levels
+  filter(Calories > 0 & Calories < 800) %>% 
+  # Remove rows with missing values to ensure clean analysis
+  drop_na()
+
+# Preview the cleaned data
+head(cleaned_nutrition)
+
+# Creating a scatter plot with a linear trend line
+ggplot(cleaned_nutrition %>% sample_n(500), aes(x = Calories, y = Sugar)) +
+  geom_point(alpha = 0.5, color = "darkgreen") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  theme_minimal() +
+  labs(
+    title = "Nutritional Trends: Calories vs. Sugar Content",
+    subtitle = "Analysis based on USDA National Nutrient Database",
+    x = "Energy (kcal per 100g)",
+    y = "Total Sugar (g)"
+  )
+#Data Cleaning Decisions
+#In this project, several key decisions were made to ensure the data is tidy and suitable for analysis:
+
+#Variable Selection and Renaming: The original USDA dataset contains over 50 variables. To create a focused "mini-case," I used select() to keep only the most relevant macronutrients (Calories, Protein, Sugar, Fat) and renamed them for clarity.
+
+#Column Verification: During development, I identified that the column for fat content is labeled as Lipid_Tot_(g) rather than Fat. I updated the script to match this internal naming convention to avoid execution errors.
+
+#Handling Missing Data: I applied the drop_na() function to remove records with missing nutritional values. This ensures that the statistical summaries and visualizations (like the geom_smooth trend line) are accurate and not skewed by null entries.
+
+#Outlier Filtering: I used filter() to restrict the analysis to items with calorie counts between 0 and 800 per 100g. This removes technical ingredients (like pure oils or industrial additives) and focuses the analysis on common food items.
+
+
+#Data Security and Portability: All file paths were simplified to relative paths (ABBREV.csv) to ensure the script is portable and can be run by anyone who forks the repository without needing to change local directory strings.
+```

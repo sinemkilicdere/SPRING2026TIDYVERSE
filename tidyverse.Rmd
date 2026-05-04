@@ -1,0 +1,142 @@
+---
+title: "TidyVerse Vignette: Exploring Netflix Data with dplyr and ggplot2"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Introduction
+
+This vignette demonstrates how to use core **TidyVerse** packages — specifically `dplyr` for data manipulation and `ggplot2` for visualization — using the [Netflix Movies and TV Shows dataset](https://www.kaggle.com/datasets/shivamb/netflix-shows) from Kaggle.
+
+The dataset contains information about movies and TV shows available on Netflix as of mid-2021, including title, type, director, cast, country, date added, release year, rating, and duration.
+
+---
+
+## Load Libraries
+
+```{r libraries}
+library(tidyverse)  # loads dplyr, ggplot2, tidyr, stringr, and more
+```
+
+---
+
+## Load the Data
+
+We read in the CSV directly. You can download `netflix_titles.csv` from [Kaggle here](https://www.kaggle.com/datasets/shivamb/netflix-shows).
+
+```{r load-data}
+netflix <- read_csv("netflix_titles.csv")
+
+glimpse(netflix)
+```
+
+---
+
+## Data Cleaning with `dplyr`
+
+### 1. Filter out rows with missing ratings
+
+```{r filter}
+netflix_clean <- netflix |>
+  filter(!is.na(rating), !is.na(country))
+
+nrow(netflix_clean)
+```
+
+### 2. Select only the columns we need
+
+```{r select}
+netflix_slim <- netflix_clean |>
+  select(type, title, country, release_year, rating, duration, listed_in)
+
+head(netflix_slim)
+```
+
+### 3. Mutate: Extract the primary country
+
+Many entries list multiple countries. We use `mutate()` and `str_extract()` to grab just the first country listed.
+
+```{r mutate}
+netflix_slim <- netflix_slim |>
+  mutate(primary_country = str_extract(country, "^[^,]+"))
+
+head(netflix_slim |> select(country, primary_country))
+```
+
+---
+
+## Summarizing Data with `dplyr`
+
+### Content type breakdown
+
+```{r count-type}
+netflix_slim |>
+  count(type, sort = TRUE)
+```
+
+### Top 10 countries by number of titles
+
+```{r top-countries}
+top_countries <- netflix_slim |>
+  count(primary_country, sort = TRUE) |>
+  slice_head(n = 10)
+
+top_countries
+```
+
+### Average release year by content type
+
+```{r avg-year}
+netflix_slim |>
+  group_by(type) |>
+  summarise(
+    avg_release_year = mean(release_year, na.rm = TRUE),
+    count = n()
+  )
+```
+
+---
+
+## Visualization with `ggplot2`
+
+### Plot 1: Movies vs TV Shows
+
+```{r plot-type, fig.width=6, fig.height=4}
+netflix_slim |>
+  count(type) |>
+  ggplot(aes(x = type, y = n, fill = type)) +
+  geom_col(show.legend = FALSE) +
+  labs(
+    title = "Netflix Content: Movies vs TV Shows",
+    x = "Type",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+### Plot 2: Top 10 Countries by Number of Titles
+
+```{r plot-countries, fig.width=8, fig.height=5}
+top_countries |>
+  ggplot(aes(x = reorder(primary_country, n), y = n, fill = n)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_fill_gradient(low = "#a8d8ea", high = "#e84545") +
+  labs(
+    title = "Top 10 Countries on Netflix by Number of Titles",
+    x = "Country",
+    y = "Number of Titles"
+  ) +
+  theme_minimal()
+```
+
+

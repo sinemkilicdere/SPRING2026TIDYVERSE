@@ -1,0 +1,67 @@
+---
+title: "Muhammad_Ahmad_Vignette"
+author: "Muhammad Ahmad"
+date: "2026-04-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(naniar)
+```
+
+```{r}
+url <- "https://raw.githubusercontent.com/MuhammadAhmad0006/SPRING2026TIDYVERSE/refs/heads/main/M.Ahmad_Coffe_sales.csv"
+
+coffeeRevenue <- read_csv(url)
+
+coffeeRevenue
+```
+
+```{r}
+glimpse(coffeeRevenue)
+```
+
+```{r}
+vis_miss(coffeeRevenue)
+```
+
+```{r}
+monthly <- coffeeRevenue |>
+  mutate(Date = ymd(Date),
+         month = floor_date(Date, "month")) |>
+  group_by(month) |>
+  summarise(revenue = sum(money), .groups = "drop")
+
+monthly
+```
+
+Monthly revenue time span
+```{r}
+ggplot(monthly, aes(x = month, y = revenue)) + 
+       geom_line(linewidth = 1.1) +
+       geom_point(size = 3) +
+  labs(
+    title = "Monthly Revenue",
+    subtitle = "March 2024 – March 2025",
+    x = "Month",
+    y = "Revenue ($)",
+    caption = "Source: your data"
+  )
+```
+
+
+

@@ -1,0 +1,114 @@
+---
+title: "TidyVerse Vignette: purrr and dplyr"
+author: "Ciara Bonnett"
+format: html
+editor: visual
+---
+## Introduction 
+This vignette demonstrated how to use the `dplyr` and `purrr` packages within the TidyVerse. We are using the built-in `msleep` dataset, which contains information about the sleep patterns of mammals. This collaborative example is designed to show how we can transform raw data into a clean, summarized format. 
+
+
+## Capability 1: Data Manipulation with dplyr
+
+Here I am using`dplyr` to isolate herbivores. We calculate a new column for awake time and sort the results to see which heribivores sleep the most. This demonstrates the power of piping functions like `filter()`, `mutate(`, and `select()` together. 
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+
+# Cleaning and transforming the mammal sleep data
+herbivore_sleep <- msleep %>%
+  filter(vore == "herbi") %>%
+  mutate(awake_time = 24 - sleep_total) %>%
+  select(name, sleep_total, awake_time, brainwt) %>%
+  arrange(desc(sleep_total))
+  
+# Display the first few rows
+knitr::kable(head(herbivore_sleep), caption = "Top Sleeping Herbivores")
+```
+## Capability 2: Functional Programming with purrr
+
+The `purrr` package is used here to apply the `mean` function across every numeric column in the dataset at once. This is much more efficient than writing individual lines of code for every column. We use `map_df` to ensure the output remains in a clean data frame format. 
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+
+# Use ggplot2::msleep to ensure R always sees it as the dataset
+ggplot2::msleep %>%
+  dplyr::select(where(is.numeric)) %>%
+  purrr::map_df(~mean(.x, na.rm = TRUE)) %>%
+  knitr::kable(caption = "Dataset Averages using purrr")
+```
+## Conclusion
+This example shows how `dplyr` pipes (`%>%`) allows us to clean and transform data efficiently before passing it directly into a visualization.
+
+
+## AI Transcript
+Phase 1: Dataset Selection and Reasoning
+
+User Inquiry: "So what dataset from kaggle do I need to use?"
+AI Response & Logic: The AI suggested that while Kaggle is an option, using a built-in TidyVerse dataset like msleep is superior for a "collaborative vignette" because it ensures the code will run for all classmates instantly without requiring them to download external files or handle broken file paths.
+Decision: The user chose to stay with the built-in msleep dataset for reliability and ease of extension by peers.
+
+Phase 2: Troubleshooting the "Select" Error
+
+User Inquiry: "Error in UseMethod('select') : no applicable method for 'select' applied to an object of class 'function'"
+Technical Logic: * The Problem: The AI identified that the R environment was "masking" the TidyVerse select fuPhase 1: Dataset Selection and Reasoning
+
+Phase 3: Final Polishing for Collaboration
+
+User Inquiry: "Have I completed my code completely?"
+AI Response & Logic: The AI confirmed the code was functional but suggested adding "Annotations" (descriptive text). This is a requirement for a "vignette" to ensure that the classmate who has to "extend" the code later understands the logic.
+
+
+## Extension
+
+To extend this Vignette I will show graphing functionality with `ggplot`.\
+First we can import the library.\
+
+```{r}
+library(ggplot2)
+```
+
+The library ggplot allows us to create plots using our data. These plots can take many different forms and display many different types of data.\
+In this example I will demonstrate a plot using techniques shown above.\
+I will show the the body weight of animals versus their sleep total.
+
+```{r}
+# First create data 
+sleep_bodyweight_df <- msleep %>%
+  select(name, vore, sleep_total, bodywt)
+  
+# Specify the dataframe as data, mapping as an aes which contains the axes  
+ggplot(data = sleep_bodyweight_df, mapping = aes(x = bodywt, y = sleep_total)) +
+  geom_point() +
+  labs( # Add labels
+  title = "Bodyweight vs Sleep total of animals",
+  x = "Body weight(kg)",
+  y = "Total Sleep(hours)" # Rename axes with full names and units
+)
+```
+
+We can see in the example above that values above 1000 are outliers that are making the rest of the graph tight.\
+We can filter the data to remove these outliers as well as color the points based on their vore status.\
+Just by adding this we can see new patterns like how no insects or omnivores in this data set go over 125 kg
+
+```{r}
+# Filter sleep_bodyweight_df 
+sleep_bodyweight_df <- sleep_bodyweight_df %>%
+  filter(bodywt < 1000)
+  
+# By adding in fill to our mapping we can get a graph that shows the vore aswell
+ggplot(data = sleep_bodyweight_df, mapping = aes(x = bodywt, y = sleep_total, color = vore)) +
+  geom_point() +
+  labs( # Add labels
+  title = "Bodyweight(less than 1000kg) vs Sleep total of animals",
+  x = "Body weight(kg)",
+  y = "Total Sleep(hours)" # Rename axes with full names and units
+)
+```
+
+In conclusion we were able to see how we could use ggplot to create visualizations of data.
+
+

@@ -1,0 +1,107 @@
+---
+title: "SPS_Data607_Week9_TidyVerse_DC"
+format: html
+editor: visual
+author: "David Chen"
+---
+
+## Instructions
+
+In this assignment, you’ll practice collaborating around a code project with GitHub.  You could consider our collective work as building out a book of examples on how to use TidyVerse functions.
+
+GitHub repository: [ ](https://github.com/acatlin/SPRING2023TIDYVERSE)<https://github.com/acatlin/SPRING2026TIDYVERSE>[**\
+**](https://github.com/acatlin/SPRING2019TIDYVERSE)
+
+You may use any dataset that you like.
+
+[Kaggle datasets](https://www.kaggle.com/datasets). 
+
+Your task here is to **Create an Example.**  Using one or more TidyVerse packages, and any dataset from fivethirtyeight.com or Kaggle or another source of your choosing, create a programming sample “vignette” that demonstrates how to use one or more of the capabilities of the selected TidyVerse package with your selected dataset. (25 points)
+
+## Dataset
+### IMF exchange rate
+
+<https://www.imf.org/external/np/fin/data/rms_mth.aspx?SelectDate=2026-01-01&reportType=REP>
+
+*These rates, normally quoted as currency units per U.S. dollar, are reported daily to the Fund by the issuing central bank. Rates are normally reported for members whose currencies are used in Fund financial transactions (see Financial Transaction Plan).*
+
+CSV file:<https://raw.githubusercontent.com/dyc-sps/SPS_Data607_Week9_TidyVerse/refs/heads/main/IMF_currencies_exchange_rate.csv>
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+url <- "https://raw.githubusercontent.com/dyc-sps/SPS_Data607_Week9_TidyVerse/refs/heads/main/IMF_currencies_exchange_rate.csv"
+df_imf_rate <- read.csv(url)
+head(df_imf_rate)
+```
+
+The dataset is imported by assigning the CSV file path to a variable url, which is then passed into read.csv() to construct the dataframe df_imf_rate.
+
+```{r}
+df_imf_rate <- df_imf_rate %>%
+  pivot_longer(
+    cols = -Currency,           # all columns except Currency
+    names_to = "IMF_Date",     # new column storing IMF_Date names
+    values_to = "C_Rate" )     # temporary column for C_Rate values
+    
+   # ) %>%
+  # 
+  # pivot_wider(
+  #   names_from = Metric,      # turn metric names into columns
+  #   values_from = Value       # fill cells with the values
+  # )
+df_imf_rate$IMF_Date <- sub("^X", "",df_imf_rate$IMF_Date)
+df_imf_rate$IMF_Date <- as.Date(df_imf_rate$IMF_Date, format = "%d.%b.%y")
+df_imf_rate
+```
+The dataset df_imf_rate is first transformed from a wide format into a long format using the pivot_longer() function. All columns except Currency are consolidated into a single variable, IMF_Date, while the corresponding values are stored in the C_Rate column. This restructuring facilitates time-series analysis by standardizing the data structure into a key-value format.
+
+Following the reshaping step, the IMF_Date variable is cleaned by removing the leading "X" prefix introduced during the CSV import process. The cleaned values are then converted into proper Date objects using the format "%d.%b.%y", ensuring consistent temporal formatting for downstream analysis and visualization.
+
+```{r}
+ggplot(df_fileter <- df_imf_rate %>% filter(Currency %in% c("Chinese yuan", "Japanese yen"))%>% drop_na(), aes(x = IMF_Date, y = C_Rate, group=Currency, color=Currency,fill = Currency)) +
+  #geom_col(position = "dodge") +   # side-by-side bars
+   geom_line() +
+  labs(title = "Jan 2026 - Chinese yuan vs Japanese yen",
+       x = "Date",
+       y = "C_Rate") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+The visualization is constructed using ggplot2 to compare the exchange rate trends between the Chinese yuan and Japanese yen over time. The dataset is first filtered to include only observations for these two currencies, while removing any missing values using drop_na() to ensure data integrity.
+
+The filtered dataset is then mapped with IMF_Date as the temporal axis and C_Rate as the exchange rate value. Currency is used as the grouping and color aesthetic to enable clear differentiation between the two time series.
+
+A line geometry (geom_line()) is applied to visualize the trend over time, providing a continuous representation of exchange rate movements. The plot is further refined with descriptive axis labels and a title indicating the time period of analysis (January 2026). Finally, theme_minimal() is used to enhance readability, and the x-axis text is rotated by 45 degrees to improve label visibility.
+
+### Data transfromation with lag features
+
+Adding a new feature using lag() to compute return values from the time series
+
+```{r}
+df_imf_rate <- df_imf_rate %>%
+  mutate(price = as.numeric(C_Rate))%>%
+  mutate(C_return = (price - lag(price)) / lag(price))
+```
+```{r}
+ggplot(df_fileter <- df_imf_rate %>% filter(Currency %in% c("Chinese yuan", "Japanese yen"))%>% drop_na(), aes(x = IMF_Date, y = C_return, group=Currency, color=Currency)) +
+  #geom_col(position = "dodge") +   # side-by-side bars
+  geom_line(data = subset(df_fileter, Currency == "Chinese yuan"), linewidth = 1.5) +
+  geom_line(data = subset(df_fileter, Currency == "Japanese yen"),linewidth = 1)+
+  geom_line()+
+  labs(title = "Jan 2026 - Chinese yuan vs Japanese yen",
+       x = "Date",
+       y = "C_return") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+## Conclusion
+From the time-series analysis, we observe a relationship between the Chinese Yuan and Japanese Yen exchange rates in January 2026. The Japanese Yen shows a notable positive return exceeding 2%, suggesting short-term appreciation relative to the base currency (US Dollar).
+

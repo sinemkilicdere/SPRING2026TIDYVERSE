@@ -1,0 +1,161 @@
+---
+title: "Global_Grocery_Inflation_TidyVerseCREATE"
+author: "Jessica Chen"
+format: html
+editor: visual
+---
+
+## Global Grocery Inflation - TidyVerse Vignette
+
+## Introduction
+
+This document will analyze Global Grocery Inflation data to demonstrate select packages within Tidyverse. Popular packages explored within include: ggplot2 and dplyr.
+
+## Data Source
+
+The data used in this document is sourced from Kaggle. It is a consolidation of other well know "Food" related sources including: FAO Food Price Index, USDA Food Price OUtlook, World Bank, ICO World Indicator.
+
+Ali, Waddah. "Global Grocery Inflation (2025/2026)." Kaggle, 2026, www.kaggle.com/datasets/waddahali/global-grocery-inflation-20252026
+
+## Data Upload 
+
+Our first step is the upload the source data (which was reloaded into github) into this document using read.csv() and review the information uploaded using glimpse(), which provides column names and the first few entries for each.
+
+```{r}
+
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+
+global_grocery_data <- read.csv("https://raw.githubusercontent.com/JessChen0/SPRING2026TIDYVERSE/refs/heads/main/breakfast%20basket.csv")
+
+glimpse(global_grocery_data)
+
+```
+
+Before we start to analyze the data, it would be helpful to understand the range of data available for review. Hence, we will select a few interesting categories to review the variables captured within each category.
+
+```{r}
+
+unique(global_grocery_data$City)
+unique(global_grocery_data$Month_Name)
+unique(global_grocery_data$Item_Key)
+unique(global_grocery_data$Item_Category)
+```
+
+Based on the data presented, we think it would be interesting to see price inflation on the combined basket of goods and for individual goods. It would also be good to see price differentials between major countries (which we can use representative cities for). To simplify the 133 cities cited in this data, we will select the largest city (by population size) for each continent. We will also include New York City and Toronto in this list to provide a local reference comparison for the document creator (and because I am biased!).
+
+|  |  |  |  |
+|----|----|----|----|
+| **Continent** | **Top City** | **Estimated Population** | **Runner-up (from your list)** |
+| **Asia** | **Tokyo** | \~41.3 Million | Delhi (\~36.9M) |
+| **Africa** | **Cairo** | \~23.2 Million | Lagos (\~21.9M) |
+| **South America** | **Sao Paulo** | \~23.1 Million | Buenos Aires (\~15.8M) |
+| **North America** | **Mexico City** | \~25.6 Million | New York (\~22.6M) |
+| **Europe** | **Moscow** | \~19.1 Million | Paris (\~11.4M) |
+| **Oceania** | **Sydney** | \~5.4 Million\* | Melbourne (\~5.2M) |
+
+## Data Tidying
+
+Package Used: Dplyr \| filter()
+
+We will first shorten the data based on our decision below to focus on top 8 cities.
+
+```{r}
+# Define our target hubs
+target_cities <- c("Tokyo", "Cairo", "Sao Paulo", "Mexico City", "Moscow", "New York", "Sydney", "Toronto")
+
+# Filter the dataset using dplyr
+hub_data <- global_grocery_data %>% filter(City %in% target_cities)
+
+# Verify the filtering worked
+hub_data %>% count(City)
+
+```
+
+## Data Analysis
+
+Packages used:
+
+Dplyr \| group_by(), summarise()
+
+ggplot2 \| geom_line()
+
+### Global Basket Comparison
+
+We will start with a macro view of 7 large cities spanning the world, comparing their basket price change over the past 6 months. We will use dplyr functions group_by() and summarise() to add up total base costs per month, per city.
+
+Furthermore, we will use geom_line() in ggplot to create a simple line graph comparing prices over a period for each city.
+
+```{r}
+
+# Calculate the total basket cost per city, per month (using dplyr)
+basket_totals <- hub_data %>%
+  group_by(City, Country, Month) %>%
+  summarise(
+    total_basket_usd = sum(Price_USD, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+head(basket_totals)
+
+# Use ggplot for visualization
+ggplot(basket_totals, aes(x = Month, y = total_basket_usd, color = City, group = City)) +
+  geom_line(linewidth = 1.2) +
+  theme_minimal() +
+  labs( title = "Global Grocery Inflation - Top 8 Countries Basket Comparison")
+```
+
+### Micro View
+
+Packages used:
+
+Dplyr \| filter()
+
+ggplot \| geom_line(), facet_wrap()
+
+To focus on a more granular level, we filter() the data to just 2 specific months and a few staples. We use facet wrap() function within ggplot to create multiple side by side plots. This is really helpful when too many levels of data clumped together would prove messy and ineffective to analyze.
+
+```{r}
+# Further filter specific items
+core_staples <- c("Milk_1L", "Bread_500g", "Eggs_12", "Bananas_1kg", "Apples_1kg")
+
+# Filter the data
+filtered_hub_data <- hub_data %>%
+  filter(Item_Key %in% core_staples) %>%
+  filter(Month_Name %in% c("October 2025", "March 2026")) 
+
+
+ggplot(filtered_hub_data, aes(x = Price_USD, y = Item_Key)) +
+  geom_line(aes(group = Item_Key), color = "grey80", linewidth = 1) +
+  geom_point(aes(color = Month_Name), size = 3) +
+  facet_wrap(~City, scales = "free_x") + 
+  theme_minimal() +
+  labs(
+    title = "Price Shifts of Key Breakfast Staples",
+    subtitle = "October 2025 vs March 2026",
+    x = "Price (USD)",
+    y = NULL,
+    color = "Month"
+  )
+
+
+```
+
+Interestingly from this analysis, it looks like Cairo and Toronto experienced significant increases in certain items (e.g., apples) while others like Milk remained relatively flat.
+
+## Summary
+
+In this document, we reviewed select Dplyr and ggplot functions within Tidyverse. It is important to note that these functions are scratching the surface of what is available out there. It is strongly recommended to continue practicing and creating new analysis to learn more advance functions and create more robust analysis and visualizations.
+
+Cheat Sheets available online:
+
+-   [**Data Transformation with dplyr**](https://rstudio.github.io/cheatsheets/html/data-transformation.html)**:** Focuses on `filter()`, `mutate()`, `summarize()`, and joining datasets.
+
+-   [**Data Visualization with ggplot2**](https://rstudio.github.io/cheatsheets/html/data-visualization.html)**:** Covers the "Grammar of Graphics," including all geoms, scales, and faceting logic.
+
+## Sources
+
+Ali, Waddah. "Global Grocery Inflation (2025/2026)." Kaggle, 2026, www.kaggle.com/datasets/waddahali/global-grocery-inflation-20252026
+
+Gemini Fast (2026) Google LLM. Link to chat: <https://gemini.google.com/share/d1a45e4bf157>

@@ -1,0 +1,74 @@
+---
+title: "video_game_tidyverse.R"
+author: "Joshua Henry"
+date: "2026-04-12"
+output: html_document
+---
+
+games <- read.csv("video_games.csv")
+games <- as_tibble(games)
+glimpse(games)
+
+games_clean <- games %>%
+  drop_na()
+  
+##Global Sales by Genre
+genre_sales <- games_clean %>%
+  group_by(Genre) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales))
+
+genre_sales
+
+ggplot(genre_sales, aes(x = reorder(Genre, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Global Sales by Genre",
+       x = "Genre",
+       y = "Sales")
+       
+##Global Sales by Platform
+platform_sales <- games_clean %>%
+  group_by(Platform) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales))
+
+platform_sales
+
+ggplot(platform_sales, aes(x = reorder(Platform, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Global Sales by Platform",
+       x = "Platform",
+       y = "Sales")
+       
+##Sales Over Time
+year_sales <- games_clean %>%
+  group_by(Year) %>%
+  summarise(total_sales = sum(Global_Sales))
+
+year_sales
+
+ggplot(year_sales, aes(x = Year, y = total_sales)) +
+  geom_line() +
+  labs(title = "Sales Over Time",
+       x = "Year",
+       y = "Global Sales")
+       
+
+---
+
+# 🔹 README
+
+```md
+## Tidyverse Video Game Sales Analysis
+
+This vignette demonstrates how to use Tidyverse tools such as dplyr and ggplot2 to analyze video game sales data.
+
+### Features:
+- Data cleaning using drop_na()
+- Grouping and summarizing data
+- Visualization using ggplot2
+
+###Dataset:
+Video game sales dataset including global and regional sales.

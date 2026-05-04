@@ -1,0 +1,115 @@
+---
+title: "Tidyverse Create- BRFSS Data"
+author: "Robert Gomez"
+format: html
+---
+
+# Approach
+
+## Introduction
+
+Explore CDC BRFSS survey data on lifestyle behaviors collected from a random sample of the U.S. general population in 2015. I plan to use the R rio package to import the dataset from my 607 GitHub repository, then apply dplyr to restructure the data in preparation for exploratory analysis, and lastly use the summarytools and ggplot2 packages to explore the data.
+
+## Data Source
+
+<https://archive.ics.uci.edu/dataset/891/cdc+diabetes+health+indicators>
+
+# Base Code
+
+## Loading packages
+
+```{r}
+pacman::p_load(rio,
+               tidyverse,
+               summarytools)
+```
+
+## Import Data
+
+```{r}
+brfss2015 <- import("https://raw.githubusercontent.com/RGomez560/BRFSS-Data/refs/heads/main/diabetes_012_health_indicators_BRFSS2015.csv")
+```
+
+## Transform Data
+
+This step demonstrates several core dplyr verbs commonly used in a
+
+Tidyverse data‑cleaning workflow:
+
+-   rename() improves semantic clarity for coded survey variables.
+
+-   select() reduces the dataset to variables relevant for analysis.
+
+-   mutate() and recode() convert numeric factor codes into categorical values.
+
+-   Lastly, the pipe operator %\>% is used to chain transformations in a readable, step‑by‑step manner consistent with Tidyverse design principles.
+
+```{r}
+brfss2015v2 <- brfss2015 %>%
+  rename(DiabetesStatus = Diabetes_012) %>%
+  select(DiabetesStatus, BMI) %>%
+  mutate(DiabetesStatus = recode(
+      DiabetesStatus,
+      "0" = "No Diabetes",
+      "1" = "Pre Diabetes",
+      "2" = "Yes Diabetes"
+    )
+  )
+```
+
+## Explore Data
+
+Data structure
+
+```{r}
+str(brfss2015v2)
+```
+
+Data frequencies
+
+```{r}
+brfss2015v2 %>%
+  freq(round.digits = 2, cumul = FALSE, report.nas = FALSE)
+```
+
+Data Visualization
+
+Visualizations are created using the ggplot2 package, which follows the Grammar of Graphics framework. Each plot is constructed by:
+
+-   Declaring a dataset and aesthetic mappings.
+
+-   Adding statistical layers (e.g., bar charts, boxplots).
+
+-   Applying scales, themes, and labels for clarity.
+
+```{r}
+ggplot(brfss2015v2, aes(x = DiabetesStatus, fill = DiabetesStatus)) +
+  geom_bar() +
+  scale_fill_hue(c = 40) +
+  theme(legend.position = "none") +
+  labs(x = "Diabetes Status", y = "Count")
+```
+
+```{r}
+brfss2015v2 %>%
+  select(BMI) %>%
+  descr(stats = c("mean", "med", "sd", "skewness", "kurtosis"), na.rm = TRUE,
+        round.digits = 2, transpose = TRUE, headings = FALSE)
+```
+
+```{r}
+ggplot(brfss2015v2, aes(y = BMI)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar",
+               width = 0.25)
+```
+
+```{r}
+ggplot(brfss2015v2, aes(x = DiabetesStatus, y = BMI, fill = DiabetesStatus)) +
+  geom_boxplot() +
+  scale_fill_hue(c = 40) +
+  theme(legend.position = "none") +
+  labs(x = "Diabetes Status") +
+  stat_boxplot(geom = "errorbar",
+               width = 0.25)
+```

@@ -1,0 +1,134 @@
+---
+title: "Tidyverse Vignette: Dplyr, Stringr, Ggplot2, Tidyr & Forcats: Bechdel Test Dataset (Extended Version)"
+author: "Initially by Emily El Mouaquiten, extended by Brandon Chanderban"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data
+
+The data used is the bechdel dataset from fivethirtyeight's library. The Bechdel Test measures representation for women in film. The three criteria of the test are:
+
+1.  The movie has at least two female characters that have names.
+2.  The women in the movie talk to each other.
+3.  They talk about something other than a man.
+
+(https://bechdeltest.com/)
+
+The dataset contains information on movies from 1970 - 2013, whether they passed or failed the Bechdel Test, and their budgets/ how much they grossed.
+
+Tidyverse, and its packages (specifically dplyr, ggplot2 and stringr) can be used to analyze and manipulate this data to explore Bechdel Test outcomes.
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(fivethirtyeight) #install package if not already done so 
+#load dataset
+data("bechdel")
+```
+
+## Dplyr
+
+Dplyr can be used to take a look at the data, as well as subset and manipulate it.
+
+```{r}
+# View the columns and some observations
+glimpse(bechdel)
+# Subset data based on movies that have passed the test
+bechdel_pass <- bechdel %>%
+                  filter(binary == "PASS")
+#Add new variables 
+bechdel %>%
+  mutate(profit = domgross - budget)
+#Sort data (highest to lowest grossing movies)
+bechdel %>%
+  arrange(desc(domgross))
+#Group data to organize it (by year and why a movie passed or failed the test)
+bechdel_why <- bechdel %>%
+                  group_by(year, clean_test)
+# Calculate the number of movies in each year and Bechdel test category group where each group represents a combination of year and clean_test outcome
+summary_why <- bechdel_why %>%
+  summarize(n = n())
+```
+
+## Ggplot2
+
+Tidyverse's Ggplot2 can be used to create a line plot depicting the trends in the reasons why movies passed/ failed the Bechdel Test over time.
+
+```{r}
+ggplot(summary_why, aes(x = year, y = n, color = clean_test)) +
+  geom_line() +
+  labs(
+    title = "Bechdel Test Outcomes Over Time",
+    x = "Year",
+    y = "Number of Movies",
+    color = "Test Result"
+  )
+```
+
+## Stringr
+
+Additionally, since much of this dataset does include text, stringr (along with dplyr) can be used to analyze movie titles and explore how certain words might relate to Bechdel Test outcomes.
+
+```{r}
+bechdel %>%
+  mutate(woman_related_title = str_detect(title, regex("girl|woman|she|her", ignore_case = TRUE))) %>%
+  group_by(binary, woman_related_title) %>%
+  summarize(n = n(), .groups = "drop")
+
+```
+
+## Extension by Brandon Chanderban
+
+This extension will build upon the original vignette (authored by Emily El Mouaquiten) by incorporating additional tidyverse packages, namely 'forcats' and 'tidyr', to enhance both the structure and interpretability of the dataset.
+
+### Tidyr
+
+In addition to the previously utilized packages, tidyr may be employed to reshape the dataset in order to allow for easier comparison of Bechdel Test outcomes across categories. Specifically, the pivot_wider() function can be used to convert the grouped summary data from a long format into a wide format, where each test outcome is represented as its own column.
+
+```{r utilize-the-tidyr-package}
+
+library(tidyr)
+
+summary_why_wide <- summary_why %>%
+  pivot_wider(
+    names_from = clean_test,
+    values_from = n,
+    values_fill = 0
+  )
+
+summary_why_wide
+```
+
+Through this transformation, each row now represents a given year, while the columns display the number of movies corresponding to each Bechdel Test outcome. This allows for a more direct, side-by-side comparison of how outcomes differ across time.
+
+### Forcats
+
+The forcats package can also be used to enhance the visualization of categorical variables within the dataset. In this case, it may be beneficial to reorder the Bechdel Test outcome categories based on their frequency, so that the resulting plot is easier to interpret.
+
+```{r utilize-the-forcats-package}
+
+library(forcats)
+
+bechdel %>%
+  count(clean_test) %>%
+  mutate(clean_test = fct_reorder(clean_test, n)) %>%
+  ggplot(aes(x = clean_test, y = n, fill = clean_test)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Frequency of Bechdel Test Outcomes",
+    x = "Test Category",
+    y = "Number of Movies"
+  )
+```
+
+By reordering the factor levels using fct_reorder(), the categories are arranged from lowest to highest frequency, which improves the overall clarity of the visualization and allows for easier comparison between the different Bechdel Test outcomes.
+
+## Conclusion/Brief Interpretation
+
+From the reordered bar chart, it can be observed that the 'ok' category appears most frequently within the Bechdel dataset, indicating that a large portion of the included films passed the test. The 'notalk' category also appears often, suggesting that many films contained named female characters but did not have them speak to each other. In conclusion, this extension provides a more lucid categorical comparison of Bechdel Test outcomes, whilst also showing how tidyr and forcats can be employed to reshape and improve the interpretability of the dataset.

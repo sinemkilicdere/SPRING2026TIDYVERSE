@@ -1,0 +1,129 @@
+---
+title: "Analyzing NYC Crime Patterns Using TidyVerse"
+author: "Zineb Tamnat"
+format: html
+editor: visual
+---
+
+## Introduction
+
+This vignette demonstrates how to use TidyVerse tools to analyze crime patterns in New York City. The dataset includes reported crimes with details such as offense type, borough and date. Because the full dataset contains millions of records, this analysis focuses on data from the year 2023.
+
+```{r}
+library(tidyverse)
+
+nyc <- read_csv("NYPD_Complaint_Data_Historic.csv", show_col_types = FALSE)
+```
+
+```{r}
+names(nyc)
+glimpse(nyc)
+```
+
+```{r}
+# Picked only relevant columns for analysis
+nyc_clean <- nyc %>%
+  select(OFNS_DESC, BORO_NM, CMPLNT_FR_DT) %>%
+  
+  # Removed rows with missing or invalid values
+  filter(!is.na(OFNS_DESC),
+         !is.na(BORO_NM),
+         BORO_NM != "(null)",
+         OFNS_DESC != "(null)") %>%
+  
+  # Converted the date column to Date format
+  mutate(date = as.Date(CMPLNT_FR_DT, format = "%m/%d/%Y"))
+
+# Checked the cleaned data
+glimpse(nyc_clean)
+```
+
+## Most Common Crime Types
+
+To begin the analysis, I summarized the most frequently reported offense types in the cleaned NYC crime dataset.
+
+```{r}
+crime_types <- nyc_clean %>%
+  count(OFNS_DESC, sort = TRUE) %>%
+  slice_head(n = 10)
+
+crime_types %>%
+  knitr::kable(col.names = c("Offense Type", "Count"),
+               caption = "Top 10 Most Common Crime Types in NYC")
+```
+
+```{r}
+# A bar chart of the top 10 offense types
+crime_types %>%
+  ggplot(aes(x = reorder(OFNS_DESC, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Most Common Crime Types in NYC",
+    x = "Offense Type",
+    y = "Number of Complaints"
+  )
+```
+
+The bar chart visualization makes it easier to view and compare the most common crime categories than the raw table alone.
+
+## Crime by Borough
+
+Next I examined how crime is distributed across the five boroughs of New York City.
+
+```{r}
+borough_crime <- nyc_clean %>%
+  count(BORO_NM, sort = TRUE)
+
+borough_crime %>%
+  knitr::kable(col.names = c("Borough", "Number of Crimes"),
+               caption = "Total Crime Count by Borough")
+```
+
+```{r}
+# A bar chart of crime by borough
+borough_crime %>%
+  ggplot(aes(x = BORO_NM, y = n)) +
+  geom_col() +
+  labs(
+    title = "Crime Distribution by Borough",
+    x = "Borough",
+    y = "Number of Crimes"
+  )
+```
+
+The results show that crime is not evenly distributed across boroughs. Brooklyn reports the highest number of crimes followed by Manhattan and Queens. Meanwhile Staten Island has the lowest. This difference may be influenced by factors such as population size in each borough.
+
+## Crime Trends Over Time
+
+Finally, I analyzed how crime levels changed over time by grouping complaints by month.
+
+```{r}
+nyc_time <- nyc_clean %>%
+  filter(format(date, "%Y") == "2023") %>%
+  mutate(month = format(date, "%Y-%m")) %>%
+  count(month)
+
+nyc_time %>%
+  knitr::kable(
+    col.names = c("Month", "Number of Crimes"),
+    caption = "Monthly Crime Counts in NYC (2023)"
+  )
+```
+
+```{r}
+nyc_clean %>%
+  filter(format(date, "%Y") == "2023") %>%   # keep only 2023 data
+  mutate(month = format(date, "%Y-%m")) %>%
+  count(month) %>%
+  ggplot(aes(x = month, y = n, group = 1)) +
+  geom_line() +
+  labs(
+    title = "Monthly Crime Trends in NYC (2023)",
+    x = "Month",
+    y = "Number of Crimes"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This shows that the crime levels remained relatively stable throughout 2023 with a noticeable dip early in the year followed by higher and more consistent activity during the middle months. This suggests a possible seasonal pattern where crime increases during late spring and summer before leveling off toward the end of the year.
