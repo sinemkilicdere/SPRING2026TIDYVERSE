@@ -223,6 +223,7 @@ Revision/Addition Description and Link:
 Initial Description and Link:
 
 Revision/Addition Description and Link:
+Extended Zihao Yu's iris vignitte, adding filter(), arrange() and making a horizantal bar chart. 
 
 # Guibril R
 Initial Description and Link: https://raw.githubusercontent.com/japhet125/SPRING2026TIDYVERSE/refs/heads/main/AI_Job_Market_Trends_2026.csv
