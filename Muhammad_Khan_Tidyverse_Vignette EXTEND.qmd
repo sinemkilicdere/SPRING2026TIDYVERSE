@@ -1,0 +1,290 @@
+---
+title: "Tidying and Analyzing Netflix Titles with TidyVerse"
+author: "Muhammad Suffyan Khan"
+format: html
+date: "04/12/2026"
+---
+
+```{r}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+## Overview
+
+This vignette demonstrates how to use TidyVerse packages (`dplyr`, `tidyr`, and `ggplot2`) to clean, transform, and analyze a real-world dataset. The focus is on handling multi-value categorical data and producing meaningful summaries.
+
+## Dataset
+
+The dataset used is the Netflix Movies and TV Shows dataset from Kaggle. It contains information such as title, content type (Movie or TV Show), country, release year, rating, duration, and genre categories stored in the `listed_in` column.
+
+## Load Libraries
+
+```{r}
+library(tidyverse)
+```
+
+## Load Dataset
+
+```{r}
+netflix <- read_csv("https://raw.githubusercontent.com/Mayneman000/SPRING2026TIDYVERSEforkmayne/refs/heads/main/netflix_titles_nov_2019.csv")
+```
+
+## Preview Data
+
+```{r}
+glimpse(netflix)
+```
+
+## Select Relevant Columns
+
+```{r}
+netflix_clean <- netflix %>%
+  select(show_id, type, title, country, release_year, rating, duration, listed_in) %>%
+  drop_na(type, listed_in)
+```
+
+## Count Content Types
+
+```{r}
+netflix_clean %>%
+  count(type)
+```
+
+## Tidy the Genre Column
+
+The `listed_in` column contains multiple genres separated by commas. We convert it into a tidy format using `separate_rows()`.
+
+```{r}
+netflix_genres <- netflix_clean %>%
+  separate_rows(listed_in, sep = ",\\s*")
+```
+
+## Top 10 Genres
+
+```{r}
+top_genres <- netflix_genres %>%
+  count(listed_in, sort = TRUE) %>%
+  slice_head(n = 10)
+
+top_genres
+```
+
+## Visualize Top Genres
+
+```{r}
+ggplot(top_genres, aes(x = reorder(listed_in, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Netflix Genres",
+    x = "Genre",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Genres by Content Type
+
+```{r}
+genre_by_type <- netflix_genres %>%
+  count(type, listed_in, sort = TRUE) %>%
+  group_by(type) %>%
+  slice_max(n, n = 5) %>%
+  ungroup()
+
+genre_by_type
+```
+
+## Visualization by Type
+
+```{r}
+ggplot(genre_by_type, aes(x = reorder(listed_in, n), y = n, fill = type)) +
+  geom_col() +
+  coord_flip() +
+  facet_wrap(~type) +
+  theme_minimal()
+```
+
+## Titles by Release Year
+
+```{r}
+titles_by_year <- netflix_clean %>%
+  count(release_year) %>%
+  filter(release_year >= 2000)
+
+ggplot(titles_by_year, aes(x = release_year, y = n)) +
+  geom_line() +
+  labs(
+    title = "Netflix Titles by Release Year",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Conclusion
+
+This vignette demonstrated how to:
+
+- Clean and filter data using `dplyr`
+- Convert multi-value columns into tidy format using `tidyr`
+- Summarize categorical data
+- Create visualizations using `ggplot2`
+
+These techniques are useful when working with real-world datasets that require restructuring before analysis.
+
+```         
+
+```
+
+## TIDYVERSE Extension by Michael Mayne
+
+The purpose of this extension is to highlight the attributes of style when addressing tidyverse and Base R.
+
+### Use of Color in ggplot2
+
+By using functions in r such as scale_fill_manual & scale_fill_viridis. We can enhance the color and style of our graphs.
+
+### Use of Gradient Coloring 
+
+There are several color function but on of the most common function for colors is Virdis which is color group which is designed to be easily visible to individuals who are have red/green colorblindness.
+
+The use of color can be done by highlighting the first bar chart created in the former example. As is the example is very clear but we can use design in order to change
+
+```{r}
+ggplot(top_genres, aes(x = reorder(listed_in, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Netflix Genres",
+    x = "Genre",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+Now lets see if we can add a color scale....
+
+One example is using viridis
+
+```{r}
+ggplot(top_genres, aes(x = reorder(listed_in, n), y = n, fill = listed_in)) +
+  #remember to add a fill function (usually on your independent variable)
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Netflix Genres",
+    x = "Genre",
+    y = "Count"
+  ) +
+  scale_fill_viridis_d(name = "Nexflix Genre")+  #This is the code to create a viridis scale 
+  theme_minimal()
+```
+
+This shows a clear color scheme from yellow to green to blue. What happens if we want to change our legend position?
+
+We can remove our legend by adding theme(legend.position = "none"). But lets try something different. The default for legends in ggplot is "right".
+
+```{r}
+ggplot(top_genres, aes(x = reorder(listed_in, n), y = n, fill = listed_in)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Netflix Genres",
+    x = "Genre",
+    y = "Count"
+  ) +
+  scale_fill_viridis_d(name = "Nexflix Genre")+  
+  theme_minimal()+
+  theme(legend.position = "bottom") #Make sure this is after any additional theme that you would like to create.
+```
+
+Now our legend is added to the bottom and there is more space to the lines. Other options for legends include "top", "right" or even "inside" with legend.position.inside to create a legend within the boundaries of the chart.
+
+### What if we wanted to add more control to color ?
+
+To add control with color we can use scale_fill_manual()
+
+```{r}
+ggplot(top_genres, aes(x = reorder(listed_in, n), y = n, fill = listed_in)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Top 10 Netflix Genres",
+    x = "Genre",
+    y = "Count"
+  ) +
+  scale_fill_manual( name = "Netflix Genres" ,
+    values = c("International Movies" = "darkblue" ,
+                               "Dramas" = "darkblue", 
+                               "Comedies" = "darkblue", 
+                               "International TV Shows" = "blue",
+                               "Documentaries" = "blue",
+                               "TV Dramas"= "blue",
+                               "Action & Adventure" = "steelblue",
+                               "Independent Movies" = "steelblue",
+                               "TV Comedies" = "lightblue",
+                               "Crime TV Shows" = "lightblue"
+                               ))+
+  theme_minimal()
+```
+
+With scale_fill_manual you can choose exactly what values show as how. Common color were used use but by using scale fill manual you can adjust all type of colors.
+
+### Style and Shape 
+
+We can also highlight the difference with the style by adjusting the shapes and values of our graphs
+
+So this base graph is really good but we can use options in order to highlight and bring certain points home.
+
+```{r}
+ggplot(titles_by_year, aes(x = release_year, y = n)) +
+  geom_line() +
+  labs(
+    title = "Netflix Titles by Release Year",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+### Adjust Line Attributes
+
+```{r}
+ggplot(titles_by_year, aes(x = release_year, y = n)) +
+  geom_line(linewidth = 1.3, #Default linewidth is 1. Changes are dramatic so be cautious of the scale used. 
+            linetype = "twodash") +   # Note that certain style can make data appear unclear
+  labs(
+    title = "Netflix Titles by Release Year",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+Now we can see the line better, which works really well if the data increases in size, also changing the style of the line makes it a bit more appealing to look at. Although if we go too far, it will make the data hard to visualize.
+
+Layering geom types in order to enhance a chart
+
+So the next adjustment will make use of a different geom type in order to create a striking chart and look for the chart.
+
+```{r}
+ggplot(titles_by_year, aes(x = release_year, y = n)) +
+  geom_area(fill = "maroon", alpha = 0.6)+  #Without the use of alpha the image would be one solid color- Alpha add transparency 
+  geom_line(linewidth = 1.3, 
+            linetype = "twodash") +   
+  labs(
+    title = "Netflix Titles by Release Year (Stylized)",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+By using geom_area() , we get a additional layer of complexity to our line chart. Now we have a clear show of the area and space taken for the data shown.
+
+You don't have to stop there you can sperate by decade or make annotations, but note that **your message must be clear before anything else**. *Avoid adding details if it does not help make your message clear.*
+
+Use a bit of *style* in your graphs in order to enhance your message!
+
+End of Report
