@@ -1,0 +1,132 @@
+---
+title: "Shawn_Ganz_Vignette EXTENDED"
+format: html
+toc: true
+toc-depth: 5
+toc-location: left
+---
+
+## Approach
+
+I'll be using the National Center for Health Statistics' (NCHS) National Health and Nutrition Examination Survey (NHANES) study from August 2021-August 2023.
+
+- [dataset]("https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DR1TOT_L.xpt")
+- [dataset information](https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DR1TOT_L.htm)
+- [study information](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Dietary&Cycle=2021-2023)
+
+I'll show how simple it is by using tidyverse to download, prep, and display the data. We download the entire dataset, select the columns we want to showcase (DBD100, DR1DRSTZ), select, filter, and then display.
+
+## Codebase
+
+```{r}
+
+library(tidyverse)
+library(haven)
+library(ggplot2)
+
+df <- read_xpt("https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DR1TOT_L.xpt") |>
+  select(salt_added_table = DBD100,
+         recall_status = DR1DRSTZ) |>
+  filter(recall_status == 1, salt_added_table %in% c(1, 2, 3, 7)) |>
+  mutate(
+    salt_added_table = case_when(
+      salt_added_table == 1 ~ "Rarely",
+      salt_added_table == 2 ~ "Occasionally",
+      salt_added_table == 3 ~ "Very often",
+      salt_added_table == 7 ~ "Refused"
+    )
+  ) |>
+  count(salt_added_table)
+
+ggplot(df, aes(x = salt_added_table, y = n)) +
+  geom_col() +
+  labs(
+    title = "How Often Salt Is Added to Food at the Table",
+    x = "Response",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Conclusion
+
+Just a quick example to show that power of tidyverse in altering a DF with 8860 entries and over 50 columns, to a dataframe with two columns that are altered for whatever you need - in this case showing how often Salt is Added to food on the table.
+
+## Denise Atherley Extension
+
+To extend this analysis, a great next step is to move beyond simply counting responses and look at how this behavior affects actual nutrient intake.
+
+Since you are already using the DR1TOT_L (Dietary Interview - Total Nutrient Intakes) dataset, we can extract DR1TSODI, which represents the estimated Total Dietary Sodium intake (in milligrams).
+
+By mapping self-reported salt habits (DBD100) against their actual daily sodium intake (DR1TSODI), we can see if people who say they add salt "Very often" actually consume more sodium overall.
+
+Here is how you can extend your codebase to calculate the summary statistics and plot a boxplot showing this relationship, complete with a reference line for the FDA's recommended daily limit (2,300 mg).
+
+```{r}
+# 1. Download and Prep Data
+df_extended <- read_xpt("https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DR1TOT_L.xpt") |>
+  select(
+    salt_added_table = DBD100,
+    recall_status = DR1DRSTZ,
+    total_sodium_mg = DR1TSODI # NEW: Actual estimated sodium intake
+  ) |>
+  # Filter for reliable recalls, valid salt responses, and non-null sodium
+  filter(
+    recall_status == 1, 
+    salt_added_table %in% c(1, 2, 3), # Dropping "Refused" for the variance analysis
+    !is.na(total_sodium_mg)
+  ) |>
+  mutate(
+    # Convert to a factor with a logical order so the plot renders left-to-right properly
+    salt_added_table = factor(
+      salt_added_table,
+      levels = c(1, 2, 3),
+      labels = c("Rarely", "Occasionally", "Very often")
+    )
+  )
+
+# 2. Optional: Generate Summary Statistics
+summary_stats <- df_extended |>
+  group_by(salt_added_table) |>
+  summarize(
+    count = n(),
+    mean_sodium = mean(total_sodium_mg),
+    median_sodium = median(total_sodium_mg)
+  )
+
+print(summary_stats)
+
+# 3. Enhanced Visualization: Boxplot
+ggplot(df_extended, aes(x = salt_added_table, y = total_sodium_mg, fill = salt_added_table)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.3) +
+  # Add a reference line for FDA recommended maximum daily sodium intake
+  geom_hline(yintercept = 2300, linetype = "dashed", color = "#FF0000", linewidth = 1) +
+  annotate(
+    "text", x = 1.5, y = 2600, 
+    label = "FDA Recommended Limit (2,300 mg)", 
+    color = "#000000", fontface = "bold"
+  ) +
+  # Formatting
+  scale_fill_brewer(palette = "Blues") +
+  labs(
+    title = "Does Adding Salt at the Table Relate to Total Sodium Intake?",
+    subtitle = "NHANES Dietary Recall Data (2021-2023)",
+    x = "How Often Salt is Added to Food at the Table",
+    y = "Total Dietary Sodium Intake (mg)",
+    caption = "Source: CDC / NCHS"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 14)
+  )
+```
+## Extended Conclusion
+
+By extending your analysis from a simple frequency count to a continuous distribution, we get a much deeper understanding of dietary behaviors and their health implications.
+
+While the initial table showed how many people add salt to their food, plotting those responses against the estimated Total Dietary Sodium (DR1TSODI) reveals the actual nutritional impact of that habit. Overlaying the FDA’s recommended daily limit of 2,300 mg provides immediate, real-world context, allowing us to visually assess what proportion of each group is exceeding healthy guidelines.
+
+Interestingly, analyses like this often reveal that while adding table salt contributes to overall sodium levels, even individuals who "Rarely" add salt frequently exceed the FDA limit. This points to the broader nutritional reality that the majority of dietary sodium comes from processed and restaurant foods rather than the saltshaker.
+
+Ultimately, this demonstrates the power of the tidyverse and ggplot2 in R: with just a few lines of code, we can transform raw, multi-column survey data from NHANES into actionable, visual health insights.

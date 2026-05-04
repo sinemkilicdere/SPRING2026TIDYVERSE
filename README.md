@@ -120,13 +120,13 @@ Revision/Addition Description and Link:
 
 # Denise A
 Initial Description and Link:
-**Blood Pressure Analysis**
-**Dataset**
+## Blood Pressure Analysis
+### Dataset
 The Blood Pressure dataset is publicly available and included in this repository:
 •	File: blood_pressure_global_dataset.csv
 •	Source: Kaggle / publicly shared dataset
 •	Description: The Blood Pressure by Age — Global Dataset contains over 8,000 patient records across 80+ countries. It features rich demographic and clinical classifications, including Age_Group, Sex, WHO_Region, and individual blood pressure measurements.
-**Vignette**
+### Vignette
 A full example vignette demonstrating TidyVerse capabilities is included:
 •	File: TidyVerse CREATE.qmd
 •	Objective: Clean, summarize, and visualize Blood Pressure Readings by age and sex, as well as by region, to uncover trends and patterns.
@@ -134,7 +134,7 @@ A full example vignette demonstrating TidyVerse capabilities is included:
 o	dplyr – Data manipulation (filtering, summarizing, grouping)
 o	tidyr – Data tidying (handling missing values, cleaning data)
 o	ggplot2 – Data visualization (bar plots, line plots, multi-color charts)
-**Highlights**
+### Highlights
 •	Rows with missing or “NA” values were excluded for accurate summaries.
 •	Sightings are analyzed by sex, age, and WHO Region.
 •	Visualizations include:
@@ -480,6 +480,7 @@ I'll show how simple it is by using tidyverse to download, prep, and display the
 [dataset](https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DR1TOT_L.xpt)
 
 Revision/Addition Description and Link:
+Denise A. added an extension to original code.
 
 I'll be adding ggplot2 visuals to the following [vignette](https://github.com/acatlin/SPRING2026TIDYVERSE/blob/main/tidyverse_create.qmd)
 
