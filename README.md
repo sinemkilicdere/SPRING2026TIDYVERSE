@@ -317,7 +317,7 @@ Initial Description and Link: https://github.com/leonlin333/SPRING2026TIDYVERSE/
 
 Revision/Addition Description and Link: https://github.com/leonlin333/SPRING2026TIDYVERSE/blob/main/Leon_Extended_Insurance_Vignette.Rmd
 
-# Long Fei L
+# Long Fei Lin
 Initial Description and Link: [LongLinTidyVerseCreate.qmd](LongLinTidyVerseCreate.qmd)
 
 This vignette shows how to use Tidyverse packages like `dplyr` and `ggplot2` to organize data and display findings in a chart. The chosen data source named `global grocery inflation` is from Kaggle.
@@ -327,6 +327,14 @@ TidyVerse Packages & Functions Used:
   * `readr`: `read_csv()`
   * `dplyr`: `select`, `filter`, `mutate()`, `group_by()`, `summarize()`
   * `ggplot2`: `ggplot()`
+
+TidyExtend:
+* **Original Vignette Title:** Shawn_Ganz_Vignette
+* **Original Author:** Shawn Ganz
+* **Dataset:** National Center for Health Statistics' (NCHS) National Health and Nutrition Examination Survey (NHANES) study from August 2021-August 2023
+Additions: factor(), ggplot2::geom_boxplot(), ggplot2::geom_col(fill)
+* **Additions:** `factor()`, `ggplot2::geom_boxplot()`, `ggplot2::geom_col(fill)`
+* **Updated Vignette Title:** Shawn_Ganz_Vignette EXTEND Long Lin
 
 # Madina K
 Initial Description and Link:
