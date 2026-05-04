@@ -311,9 +311,9 @@ Initial Description and Link:
 Revision/Addition Description and Link:
 
 # Leon Lin
-Initial Description and Link:
+Initial Description and Link: https://github.com/leonlin333/SPRING2026TIDYVERSE/blob/main/Leon_TidyVerse_Vignette_1.Rmd
 
-Revision/Addition Description and Link:
+Revision/Addition Description and Link: https://github.com/leonlin333/SPRING2026TIDYVERSE/blob/main/Leon_Extended_Insurance_Vignette.Rmd
 
 # Long Fei L
 Initial Description and Link: [LongLinTidyVerseCreate.qmd](LongLinTidyVerseCreate.qmd)
