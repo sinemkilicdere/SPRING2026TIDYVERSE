@@ -138,3 +138,5 @@ load_jobs_data |>
        x = "Experience Level",
        y = "Salary ($)")
 ```
+
+Unsurprisingly, as experience level increases so does salary. As a point of interest, the skills featured in listings did not contain a massive skew and were nearly equal with the exceptions being python and deep learning. Cloud skills were listed in the highest percentage of listings.
