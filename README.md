@@ -535,8 +535,12 @@ Initial Description and Link:
 | Author | Vignette | Package(s) | What It Covers | Dataset |
 |---|---|---|---|---|
 | Zihao Yu | [zihao_iris_vignette.Rmd](zihao_iris_vignette.Rmd) | dplyr, ggplot2 | pivot_longer, grouped summaries, boxplots, scatter plot|  [Kaggle](https://www.kaggle.com/datasets/uciml/iris?resource=download) |
+| Zihao Yu | [Zihao_Extended_LongLin.qmd](Zihao_Extended_LongLin.qmd)| dplyr, ggplot2 | breakfast basket summary, bar chart, price gap analysis | [grocery inflation](https://www.kaggle.com/datasets/waddahali/global-grocery-inflation-20252026/data?select=breakfast+basket.csv) |
 
 Revision/Addition Description and Link:
+
+Extended Long Lin’s grocery inflation vignette by adding a breakfast basket price comparison for the target cities in March 2026, including a summary table, bar chart, and price gap analysis.
+Zihao_Extended_LongLin.qmd
 
 # ZIneb T
 Initial Description and Link:
