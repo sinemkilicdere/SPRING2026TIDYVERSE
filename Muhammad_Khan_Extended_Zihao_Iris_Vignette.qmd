@@ -1,0 +1,136 @@
+---
+title: "Extending Zihao Yu's Iris Vignette with Feature Engineering"
+author: "Muhammad Suffyan Khan"
+format: html
+date: "05/03/2026"
+---
+
+```{r}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+library(tidyverse)
+```
+
+## Extension Overview
+
+This vignette extends Zihao Yu's original iris TidyVerse example. The original vignette used the built-in `iris` dataset to summarize petal and sepal measurements by species and visualize measurement differences using `dplyr`, `tidyr`, and `ggplot2`.
+
+This extension adds new annotated code that demonstrates additional TidyVerse capabilities, including feature engineering with `mutate()`, grouped summaries with `summarise()`, ranking with `arrange()`, and additional visualizations with `ggplot2`.
+
+## Load the Dataset
+
+```{r}
+data(iris)
+
+iris_tbl <- as_tibble(iris)
+
+glimpse(iris_tbl)
+```
+
+## Create New Measurement Ratios
+
+Zihao's original vignette compared the original iris measurements. This extension creates new variables that describe the relationship between length and width for petals and sepals.
+
+```{r}
+iris_features <- iris_tbl %>%
+  mutate(
+    petal_length_width_ratio = Petal.Length / Petal.Width,
+    sepal_length_width_ratio = Sepal.Length / Sepal.Width,
+    petal_area_estimate = Petal.Length * Petal.Width,
+    sepal_area_estimate = Sepal.Length * Sepal.Width
+  )
+
+head(iris_features)
+```
+
+## Summarize the New Features by Species
+
+After creating the new variables, we can use `group_by()` and `summarise()` to compare the average ratios and estimated areas for each species.
+
+```{r}
+species_feature_summary <- iris_features %>%
+  group_by(Species) %>%
+  summarise(
+    avg_petal_ratio = mean(petal_length_width_ratio),
+    avg_sepal_ratio = mean(sepal_length_width_ratio),
+    avg_petal_area = mean(petal_area_estimate),
+    avg_sepal_area = mean(sepal_area_estimate),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(avg_petal_area))
+
+species_feature_summary
+```
+
+## Visualize Average Petal Area by Species
+
+This chart extends the original analysis by using the engineered `petal_area_estimate` variable. The plot makes it easier to compare species based on combined petal length and width.
+
+```{r}
+ggplot(species_feature_summary, aes(x = reorder(Species, avg_petal_area), y = avg_petal_area, fill = Species)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Average Estimated Petal Area by Iris Species",
+    x = "Species",
+    y = "Average Estimated Petal Area"
+  ) +
+  theme_minimal()
+```
+
+## Convert Engineered Features to Long Format
+
+To compare all engineered features in one tidy structure, this section uses `pivot_longer()` to convert the new feature columns into a long format.
+
+```{r}
+iris_features_long <- iris_features %>%
+  select(
+    Species,
+    petal_length_width_ratio,
+    sepal_length_width_ratio,
+    petal_area_estimate,
+    sepal_area_estimate
+  ) %>%
+  pivot_longer(
+    cols = -Species,
+    names_to = "engineered_feature",
+    values_to = "value"
+  )
+
+head(iris_features_long)
+```
+
+## Visualize Engineered Feature Distributions
+
+This boxplot compares the distributions of the engineered features by species. It builds on Zihao's original boxplot approach but applies it to newly created variables instead of only the original measurements.
+
+```{r}
+ggplot(iris_features_long, aes(x = Species, y = value, fill = Species)) +
+  geom_boxplot() +
+  facet_wrap(~ engineered_feature, scales = "free_y") +
+  labs(
+    title = "Engineered Iris Features by Species",
+    x = "Species",
+    y = "Feature Value"
+  ) +
+  theme_minimal()
+```
+
+## Scatter Plot Using Engineered Features
+
+This final plot compares estimated petal area and estimated sepal area. The goal is to see whether the engineered features help separate the iris species visually.
+
+```{r}
+ggplot(iris_features, aes(x = sepal_area_estimate, y = petal_area_estimate, color = Species)) +
+  geom_point(size = 2) +
+  labs(
+    title = "Estimated Sepal Area vs Estimated Petal Area",
+    x = "Estimated Sepal Area",
+    y = "Estimated Petal Area"
+  ) +
+  theme_minimal()
+```
+
+## Conclusion
+
+This extension adds feature engineering to Zihao Yu's original iris vignette. By creating measurement ratios and estimated area variables, the analysis moves beyond basic summaries of the original columns. The additional grouped summaries and visualizations demonstrate how `mutate()`, `summarise()`, `arrange()`, `pivot_longer()`, and `ggplot2` can be used together to extend an existing TidyVerse example.
+

@@ -1,0 +1,74 @@
+---
+title: "Video Game Sales Extended Analysis (Extended)"
+author: "Mark Hamer"
+output: html_document
+---
+```{r}
+library(tidyverse)
+```
+
+# Load and clean data
+```{r}
+games <- read.csv("video_games.csv")
+games <- as_tibble(games)
+games_clean <- games %>% drop_na()
+```
+
+## Global Sales by Genre (ORIGINAL)
+```{r}
+genre_sales <- games_clean %>%
+  group_by(Genre) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales))
+ggplot(genre_sales, aes(x = reorder(Genre, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Global Sales by Genre", x = "Genre", y = "Sales")
+```
+
+## Global Sales by Platform (ORIGINAL)
+```{r}
+platform_sales <- games_clean %>%
+  group_by(Platform) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales))
+ggplot(platform_sales, aes(x = reorder(Platform, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Global Sales by Platform", x = "Platform", y = "Sales")
+```
+
+## Sales Over Time (ORIGINAL)
+```{r}
+year_sales <- games_clean %>%
+  group_by(Year) %>%
+  summarise(total_sales = sum(Global_Sales))
+ggplot(year_sales, aes(x = Year, y = total_sales)) +
+  geom_line() +
+  labs(title = "Sales Over Time", x = "Year", y = "Global Sales")
+```
+
+## Top 10 Publishers by Global Sales (EXTENDED)
+```{r}
+publisher_sales <- games_clean %>%
+  group_by(Publisher) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales)) %>%
+  slice_head(n = 10)
+ggplot(publisher_sales, aes(x = reorder(Publisher, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Top 10 Publishers by Global Sales",
+       x = "Publisher", y = "Global Sales (millions)")
+```
+
+## Regional Sales Breakdown (EXTENDED)
+```{r}
+games_clean %>%
+  summarise(NA_Sales = sum(NA_Sales), EU_Sales = sum(EU_Sales),
+            JP_Sales = sum(JP_Sales), Other_Sales = sum(Other_Sales)) %>%
+  pivot_longer(everything(), names_to = "Region", values_to = "Sales") %>%
+  ggplot(aes(x = Region, y = Sales, fill = Region)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Sales by Region", y = "Sales (millions)")
+```

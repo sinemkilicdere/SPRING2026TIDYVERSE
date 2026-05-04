@@ -127,3 +127,34 @@ ggplot(
 ## Conclusion
 
 This vignette demonstrated how dplyr can be used to summarize iris measurements by species and how ggplot2 can be used to visualize differences among species. Overall, the three iris species show differences, especially in petal measurements.
+
+
+## Extension by Madina Kudanova: Petal Length-to-Width Ratio
+
+This extension creates a new variable called `petal_ratio`, which compares petal length to petal width. This helps identify whether some species have longer, narrower petals.
+
+```{r}
+iris_ratio <- 
+  iris %>%
+  mutate(petal_ratio = Petal.Length / Petal.Width) %>%
+  group_by(Species) %>%
+  summarise(
+    mean_petal_ratio = mean(petal_ratio),
+    median_petal_ratio = median(petal_ratio),
+    count = n()
+  )
+
+iris_ratio
+```
+
+The summary shows how the petal ratio differs across species.
+
+```{r}
+ggplot(iris_ratio, aes(x = Species, y = mean_petal_ratio, fill = Species)) +
+  geom_col() +
+  labs(
+    title = "Average Petal Length-to-Width Ratio by Species",
+    x = "Species",
+    y = "Average Petal Ratio"
+  )
+```

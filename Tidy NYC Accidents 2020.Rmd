@@ -1,0 +1,78 @@
+---
+title: "assignment"
+author: "chingiz rabdanov"
+date: "2026-04-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# loading library
+
+library(tidyverse)
+library(lubridate)
+
+Sys.setlocale("LC_TIME", "English")
+
+# dataset loading from github
+
+url <- "https://raw.githubusercontent.com/Chingiz1492/NYPD-crime-dataset/main/NYC%20Accidents%202020.csv"
+
+accidents_raw <- read_csv(url)
+
+accidents_processed <- accidents_raw %>%
+
+# Remove records without borough and format text (stringr)
+  filter(!is.na(BOROUGH)) %>%
+  mutate(BOROUGH = str_to_title(BOROUGH)) %>%
+  
+# Working with dates and time (lubridate)
+  mutate(
+    date_parsed  = ymd(`CRASH DATE`),
+    month        = month(date_parsed, label = TRUE, abbr = FALSE),
+    hour         = hour(`CRASH TIME`)
+  ) %>%
+  
+# Create time of day categories (dplyr)
+     mutate(time_of_day = factor(case_when(
+    hour >= 5  & hour <= 11 ~ "Morning",
+    hour >  11 & hour <= 17 ~ "Afternoon",
+    hour >  17 & hour <= 22 ~ "Evening",
+    TRUE                    ~ "Night"
+    ), levels = c("Night", "Morning", "Afternoon", "Evening"))) %>%
+
+# Convert number of injured persons to numeric format
+
+  mutate(injured_count = as.numeric(`NUMBER OF PERSONS INJURED`))
+  
+summary_matrix <- accidents_processed %>%
+  group_by(BOROUGH, time_of_day) %>%
+  summarize(accidents_count = n(), .groups = "drop") %>%
+  
+#  Pivot table from long to wide format (tidyr)
+
+  pivot_wider(names_from = time_of_day, values_from = accidents_count, values_fill = 0)
+
+# Display formatted table in HTML
+
+knitr::kable(summary_matrix, caption = "Accidents by Borough and Time of Day")
+
+# Use stat_summary to automatically aggregate injured persons
+ggplot(accidents_processed, aes(x = month, y = injured_count, fill = BOROUGH)) +
+ stat_summary(fun = function(x) sum(x, na.rm = TRUE), geom = "col") +
+  facet_wrap(~BOROUGH, scales = "free_y") +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  labs(
+    title    = "Distribution of Injured Persons by Borough (2020)",
+    subtitle = "Aggregated monthly data",
+    x        = "Month",
+    y        = "Total Injured",
+    fill     = "Borough"
+  ) +
+  theme(
+    axis.text.x     = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
+

@@ -1,0 +1,242 @@
+---
+title: "TidyVerse CREATE: Exploring College Major Earnings with dplyr, ggplot2, and tidyr"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Introduction
+
+This vignette demonstrates core capabilities of three TidyVerse packages: **dplyr**,
+**ggplot2**, and **tidyr**, using the `college_recent_grads` dataset from the
+`fivethirtyeight` package.
+
+Note: to install fivethirtyeight in the console: `install.packages("fivethirtyeight")`
+
+## Load Libraries and Data
+
+```{r load}
+library(tidyverse)
+library(fivethirtyeight)
+
+data("college_recent_grads")
+glimpse(college_recent_grads)
+```
+
+---
+
+## Part 1: dplyr -- Selecting, Filtering, and Summarizing
+
+### select() -- Pick the columns you need
+
+`select()` lets you keep only the columns relevant to your analysis, which makes
+data frames easier to read and work with.
+
+```{r select}
+major_earnings <- college_recent_grads |>
+  select(major, major_category, total, median, p25th, p75th, unemployment_rate)
+
+head(major_earnings)
+```
+
+### filter() -- Subset rows by condition
+
+`filter()` keeps only the rows that satisfy a logical condition. Here we pull out
+majors where the median salary exceeds $50,000.
+
+```{r filter}
+high_earning <- major_earnings |>
+  filter(median > 50000)
+
+high_earning |>
+  select(major, major_category, median) |>
+  arrange(desc(median))
+```
+
+### mutate() -- Create new columns
+
+`mutate()` adds new columns that are functions of existing ones. We can compute an
+interquartile range (IQR) of earnings to measure salary spread within each major.
+
+```{r mutate}
+major_earnings <- major_earnings |>
+  mutate(iqr_earnings = p75th - p25th)
+
+major_earnings |>
+  select(major, median, iqr_earnings) |>
+  arrange(desc(iqr_earnings)) |>
+  head(10)
+```
+
+### group_by() + summarize() -- Aggregate by category
+
+`group_by()` splits the data by a categorical variable, and `summarize()` computes
+summary statistics for each group. This is one of the most powerful patterns in dplyr.
+
+```{r group-summarize}
+category_summary <- major_earnings |>
+  group_by(major_category) |>
+  summarize(
+    n_majors       = n(),
+    median_salary  = median(median, na.rm = TRUE),
+    mean_unemp     = mean(unemployment_rate, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  arrange(desc(median_salary))
+
+category_summary
+```
+
+### arrange() -- Sort your results
+
+We already used `arrange()` above, but it deserves its own callout. Sorting by a
+computed summary makes it easy to spot the top and bottom categories at a glance.
+
+```{r arrange}
+category_summary |>
+  arrange(mean_unemp)
+```
+
+Agriculture and Natural Resources has both a respectable median salary and the
+lowest average unemployment rate among these categories.
+
+---
+
+## Part 2: ggplot2 -- Visualizing the Data
+
+### Bar chart -- Median salary by major category
+
+`geom_col()` draws bars whose heights correspond to values in the data (as opposed
+to `geom_bar()`, which counts rows). `coord_flip()` makes long category labels
+readable.
+
+```{r bar-chart, fig.width=8, fig.height=6}
+ggplot(category_summary, aes(x = reorder(major_category, median_salary),
+                              y = median_salary)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Median Salary by Major Category",
+    x = NULL,
+    y = "Median Salary ($)"
+  ) +
+  theme_minimal()
+```
+
+### Scatter plot -- Salary vs. unemployment rate
+
+Each point is one major. `geom_smooth()` overlays a LOESS trend line so we can see
+whether higher-paying majors tend to have lower unemployment.
+
+```{r scatter, fig.width=8, fig.height=6}
+ggplot(major_earnings, aes(x = unemployment_rate, y = median)) +
+  geom_point(aes(color = major_category), alpha = 0.7, size = 2) +
+  geom_smooth(method = "loess", se = FALSE, color = "black", linewidth = 0.8) +
+  labs(
+    title = "Median Salary vs. Unemployment Rate by Major",
+    x = "Unemployment Rate",
+    y = "Median Salary ($)",
+    color = "Category"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 7))
+```
+
+### Box plot -- Salary distributions within categories
+
+Box plots reveal the spread and outliers within each category, not just the center.
+
+```{r boxplot, fig.width=8, fig.height=6}
+ggplot(major_earnings, aes(x = reorder(major_category, median, FUN = stats::median),
+                            y = median)) +
+  geom_boxplot(fill = "lightblue", outlier.color = "red") +
+  coord_flip() +
+  labs(
+    title = "Distribution of Median Salaries Within Each Major Category",
+    x = NULL,
+    y = "Median Salary ($)"
+  ) +
+  theme_minimal()
+```
+
+---
+
+## Part 3: tidyr -- Reshaping Data
+
+### pivot_longer() -- Wide to long format
+
+Many ggplot geometries work best with "long" data, where each row is a single
+observation. The salary percentile columns (`p25th`, `median`, `p75th`) are
+currently spread across three columns. `pivot_longer()` stacks them into one
+column so we can map the percentile label to color or facet.
+
+```{r pivot-longer}
+top5 <- major_earnings |>
+  arrange(desc(median)) |>
+  head(5)
+
+top5_long <- top5 |>
+  select(major, p25th, median, p75th) |>
+  pivot_longer(
+    cols      = c(p25th, median, p75th),
+    names_to  = "percentile",
+    values_to = "salary"
+  )
+
+top5_long
+```
+
+### Visualizing the reshaped data
+
+Now that we have long-format data, a grouped bar chart comparing the three
+percentiles for each major is straightforward.
+
+```{r grouped-bar, fig.width=9, fig.height=5}
+top5_long <- top5_long |>
+  mutate(percentile = factor(percentile,
+                             levels = c("p25th", "median", "p75th"),
+                             labels = c("25th Pctile", "Median", "75th Pctile")))
+
+ggplot(top5_long, aes(x = reorder(major, salary), y = salary, fill = percentile)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  scale_fill_brewer(palette = "Blues") +
+  labs(
+    title = "Salary Percentiles for Top 5 Earning Majors",
+    x = NULL,
+    y = "Salary ($)",
+    fill = "Percentile"
+  ) +
+  theme_minimal()
+```
+
+### pivot_wider() -- Long back to wide
+
+`pivot_wider()` is the inverse operation. If a downstream model or table expects
+one column per percentile, you can spread the data back out.
+
+```{r pivot-wider}
+top5_wide <- top5_long |>
+  pivot_wider(
+    names_from  = percentile,
+    values_from = salary
+  )
+
+top5_wide
+```
+
+---
+
+## Conclusion
+
+This vignette walked through the core verbs of three TidyVerse packages:
+
+- **dplyr**: `select()`, `filter()`, `mutate()`, `group_by()`, `summarize()`, `arrange()`
+- **ggplot2**: `geom_col()`, `geom_point()`, `geom_smooth()`, `geom_boxplot()`
+- **tidyr**: `pivot_longer()`, `pivot_wider()`
+
+Together these tools cover a typical analysis workflow: subset and transform the
+data, compute summaries, reshape for plotting, and visualize the results.

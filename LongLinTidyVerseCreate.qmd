@@ -1,0 +1,210 @@
+---
+title: "Tidyverse Create"
+author: "Long Lin"
+format: html
+editor: visual
+---
+
+## Introduction
+
+This vignette shows how to use Tidyverse packages like `dplyr` and `ggplot2` to organize data and display findings in a chart. The chosen data source named `global grocery inflation` is from Kaggle.
+
+Source: https://www.kaggle.com/datasets/waddahali/global-grocery-inflation-20252026/data?select=breakfast+basket.csv
+
+## Reading in the data with Tidyverse
+
+We read in the data from Kaggle by first uploading the data to github and then using the `read_csv` method within the `tidyverse` library on a raw github link. Then we use the `glimpse` method within `dplyr` to visualize the columns within the data set.
+
+```{r}
+library(tidyverse)
+
+url <- "https://raw.githubusercontent.com/longflin/DATA-607/refs/heads/main/TIDYVERSE2026/GlobalGroceryInflation.csv"
+
+grocery_inflation <- read_csv(
+  file = url,
+  show_col_types = FALSE,
+  progress = FALSE
+)
+
+glimpse(grocery_inflation)
+
+```
+
+Next, we use `select` within `dplyr` to select specific columns of interest. For this vignette, we will focus on the price of milk in target cities such as `New York`, `Los Angeles`, `London`, `Paris`, `Beijing`, and `Tokyo`. In order to do this, we use `filter` for `Item` that is equal to `Milk (1 Liter)` and for `City` that are in the `target_cities` variable.
+
+```{r}
+target_cities <- c("New York", "Los Angeles", "London", "Paris", "Beijing", "Tokyo")
+
+milk_inflation <- grocery_inflation %>%
+  select(City, Country, Item, Month, YoY_Inflation_Estimate_Pct) %>%
+  filter(Item == "Milk (1 Liter)") %>%
+  filter(City %in% target_cities)
+
+head(milk_inflation)
+```
+
+Here, we use `summarize` to create a new column named `Average_YoY` to grab the average of all the months for each city.
+
+```{r}
+milk_inflation_group <- milk_inflation %>%
+  group_by(City) %>% 
+  summarize(
+    Average_YoY = mean(YoY_Inflation_Estimate_Pct, na.rm = TRUE)
+  )
+
+head(milk_inflation_group)
+```
+
+In order to visualize the data, we use `ggplot2` to create a bar chart to display the results.
+
+```{r}
+library(ggplot2)
+
+ggplot(milk_inflation_group, aes(x = reorder(City, Average_YoY), 
+                                       y = Average_YoY, 
+                                       fill = City)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = round(Average_YoY, 1)), 
+            hjust = -0.2, 
+            size = 3.5) + 
+  coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) + 
+  labs(
+    title = "Average Milk Inflation by City for Oct 2025 to March 2026",
+    x = "City",
+    y = "Average Year over Year Inflation (%)"
+  ) +
+  theme_minimal()
+```
+
+## Conclusion
+
+Tidyverse is a very powerful tool for managing and transforming data. It allows you to create easy to read charts created from a data source of your choice. In this example, packages such as `dplyr` and `ggplot2`, made it very easy to manipulate the data and display the results.
+
+### Tidyverse extend
+
+Let's use lubridate and create a time plot of grocery prices.
+
+```{r}
+nyc <- grocery_inflation |> filter(City == "New York")
+
+#convert the column to year/month (YM)
+nyc <- nyc %>%
+  mutate(Month = ym(Month))
+```
+
+### Creating a time plot
+
+```{r}
+#use geom_line + geom_point to include both lines and points
+nyc |> ggplot(aes(x = Month, y = Price_USD, color = Item)) +
+  geom_line() +
+  geom_point(shape = 5) + #changing the shape of the point with "shape = 5"
+  labs(title = "Grocery Prices Over a Six-Month Period", x = "Month (2025-2026)",
+       y = "Price in USD") + 
+  theme_minimal() #changing the background
+```
+
+### Mapping prices
+
+ggplot has a mapping feature. However, you need coordinates, not just city names. We can use the maps package to join coordinates to the city name.
+
+```{r}
+library(maps)
+
+data(us.cities)
+
+#each city ends in the state, so to join we need to delete 3 characters on the end 
+#of each city
+us.cities$name <- str_sub(us.cities$name, end = -4)
+
+#filter for only cities in the USA, eggs only
+
+grocery_us <- grocery_inflation |> 
+  filter(ISO_Country_Code == "USA") |> 
+  filter(Item_Key == "Eggs_12") |> 
+  filter(Month_Name == "March 2026")
+
+#left join
+cities_joined <- left_join(grocery_us, us.cities, join_by(City == name))
+
+
+
+```
+
+Plotting a map using the SF package:
+
+```{r}
+library(sf)
+
+#use the SF Package to classify the coordinates
+states_sf <- st_as_sf(maps::map("state", plot = FALSE, fill = TRUE))
+
+cities_sf <- cities_joined |> 
+  drop_na(long, lat) |> 
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
+
+
+#the vibe is very Vegas in the 80s
+ggplot() +
+  #change the map colors
+    geom_sf(data = states_sf, fill = "pink", color = "orange") +
+    geom_sf(data = cities_sf, aes(color = Price_USD), size = 8) + 
+  #ensure the colors get darker as the price gets higher
+  scale_color_gradient(low = "#ADD8E6", high = "#000080") +
+  #remove lines/background
+    theme_void() + 
+    labs(color = "Egg Price in Dollars", title = "Price of a Dozen Eggs in March 2026")
+
+```
+
+### Histogram of egg prices in March 2025 across the world
+
+Are they normally distributed?
+
+```{r}
+grocery_inflation |> 
+  #filter for one product in one month
+  filter(Item_Key == "Eggs_12") |> 
+  filter(Month_Name == "March 2026") |>
+  #specify only x for histograms
+  ggplot(aes(x = Price_USD)) +
+  #specify binwidth or bins (or leave it blank and let ggpplot pick)
+  geom_histogram(bins = 40)
+
+
+#breakfast basket (price of a whole breakfast?), with different regions in different colors
+
+grocery_inflation |> 
+  filter(Item_Key == "Eggs_12") |> 
+  filter(Month_Name == "March 2026") |>
+  #specify fill for color
+  ggplot(aes(x = Breakfast_Basket_USD, fill = Region)) +
+  geom_histogram() +
+  #remove the legend
+  theme(legend.position = "none")
+```
+
+### Scatterplots
+
+Plotting the population against the price of eggs:
+
+```{r}
+
+grocery_inflation |> 
+  #population in millions instead of the actual number
+  mutate(pop_est_mils = Population_Estimate/1000000) |>
+  filter(Item_Key == "Eggs_12") |> 
+  filter(Month_Name == "March 2026") |>
+  #plotting population vs. price, breaking out color by country
+  ggplot(aes(x = pop_est_mils, y = Price_USD, color = Country)) +
+  #changing the shape of the points
+  geom_point(shape = 3) + 
+  #removing legend (othrwise it's overwhelming)
+  theme(legend.position = "none") +
+  #add titles
+  labs(title = "Population vs. Egg Price", x = "City Population in Millions", y = "Egg Price in USD")
+
+```
+
+As population goes up, it looks like egg prices go down.

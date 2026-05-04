@@ -1,0 +1,174 @@
+---
+title: "TidyVerse CREATE"
+author: "Desiree Thomas"
+format: html
+editor: visual
+---
+
+## Dataset Source
+
+This dataset was obtained when searching through the tidytuesday GitHub repo. There was an analysis there regarding plants, watering and the amount of sunlight that they needed. I was interested in the data itself and traced the dataset back to the original owner/creator: nrennie https://github.com/nrennie. The RAW url leads to the dataset in her repo.
+
+```{r}
+#Load the tidyverse
+library(tidyverse)
+```
+
+```{r}
+
+#this is leads to the RAW for reproducibility
+raw_url <- "https://raw.githubusercontent.com/nrennie/data/refs/heads/main/edible-plant-database/edible_plants.csv"
+
+plants_csv <- read_csv(raw_url)
+```
+
+#Packages to Explore
+
+Hello, fellow student! Today for this vignette we are going to explore the edible plants dataset. To help you understand how we worked through this dataset, I am going to walk you through the dplyr package. While there are a combination of lovely packages in the Tidyverse, such as ggplot and other essentials, I an focusing on just dplyr, today, to leave room for possible extensions by classmates. If you are following along from DATA 607, then you are likely already very familiar with the listed packages. Nonetheless, let us begin:
+
+#Our Focus for Today:
+
+\*Dplyr: We will use this for data manipulation through mutate(), filter(), group_by() and summarise().
+
+#Possible Extension:
+
+Ggplot is another package that creates lovely visualizations and plots that you can extend with. This is just one of many that you should feel free to use.
+
+Those are just two possibilities to extend this dataset with. This is an interesting dataset, so feel free to play around with it.
+
+#Let's Get to Work!
+
+Here is a demonstration of the select function. When you see () after a word, you can assume it is a function. I will refer to functions as select(), mutate(), etc. so be aware of how you are reading them.
+
+This dataset has 20 variables and 140 observations. You may notice that many of the function names in dplyr are reminiscent of those used in SQL (if you're familiar). Dplyr took inspiration from SQL when it was created in 2014 by Hadley Wickham.
+
+In this example, we are going to select the columns that we want.
+
+```{r}
+
+data_selected <- plants_csv %>% 
+  select(common_name, cultivation, preferred_ph_lower, preferred_ph_upper, days_harvest)
+
+
+```
+
+Next, we are going to use filter(). What are we filtering for? Legumes (not Legolas)! I don't believe I've ever had a legume, actually.
+
+```{r}
+legumes <- data_selected %>% 
+  filter(cultivation == "Legume")
+```
+
+Next up: Mutate()
+
+Don't worry, it won't touch your genes. Mutate() can be used to further your data transformation and cleaning. We'll be using it to extract numbers from strings and the minimum days. Mutate() is also used to create new "features" such as the range of pH that a plant can tolerate. I encourage you to go to your Global Environment (if viewing this in RStudio) and look at the difference before we used mutate (view the data_selected dataframe) and then view the plants_mutated dataframe.
+
+```{r}
+plants_mutated <- data_selected %>%
+  mutate(
+    #Note that I am using stringr inside of mutate to get the number
+    min_days = as.numeric(str_extract(days_harvest, "\\d+")),
+    #this calculates a new created column -- get it? We *MUTATED* the dataset. It has a new column. Similar to a mutation causing you to grow another finger.
+    ph_range = preferred_ph_upper - preferred_ph_lower
+  ) %>%
+  
+  #As future Data Scientists, this is good practice to have
+  filter(!is.na(min_days))
+```
+
+Now, say, what if you wanted to know which plants grow the fastest? We'll be using arrange() to find the answer to this interesting question. Let's also take a quick peek by using head() to view the first 5 results.
+
+```{r}
+fast_growers <- plants_mutated %>%
+  arrange(min_days)
+
+head(fast_growers, 5)
+```
+
+Here goes the final functions we are going to use for our dplyr vignette : group_by() and summarize(). We are going to use these to see the average requirements for each cultivation group.
+
+```{r}
+plant_cult <- plants_mutated %>%
+  group_by(cultivation) %>%
+  summarize(
+    avg_harvest_wait = mean(min_days),
+    avg_ph_tolerance = mean(ph_range),
+    plant_count = n()
+  ) %>%
+  arrange(avg_harvest_wait)
+
+print(plant_cult)
+```
+
+And wow, look at that! Within this small vignette of dplyr, we walked through how to use some of dplyr's capabilities. Though the methods used for this vignette are relatively simple, they are an important part of learning how to work with datasets.
+
+Before taking this class, I had never used dplyr before and mostly learned it through the suggested DataCamp course that the professor suggested. I hope this vignette was helpful to you.
+
+#Citation
+
+"What is dplyr?": https://dataconomy.com/2025/04/25/what-is-dplyr/
+
+# Extension - Shawn Ganz (https://github.com/Siganz)
+
+Hello, I'm going to **extend** this qmd. I noticed that there's no visualizations and tidyverse comes with ggplot2, so let's create three ggplots for the plant_cult tibble.
+
+We can do a simple ggplot by invoking `ggplot(aes(x = , y = )) + geom_col()`- note that we use geom_col() in this example because we have categorical data (x = cultivation) and and already summarized numerical data.
+
+```{r}
+plant_cult |>
+  ggplot(aes(x = (cultivation),
+             y = avg_harvest_wait)) + 
+  geom_col()
+```
+
+However, it doesn't look too nice!
+
+We can add a `reorder()` to the `aes(x=)`that way we can have the graph sorted by the y axis and we can add a touch of color via `fill =` within ggplot's `aes()` function. Also, some of the words are crossing over in the x axis, so we can flip the graph to be horizontal instead of vertical via `+ coord_flip()`. We can also add a title and change the axis titles, because the current field names don't offer much information... We can do this via `labs(title =, x =, y =)`. Lastly we can apply a theme, which offers a style, similar to a template. In this case, we can use `+theme_minimal()`.
+
+Add that all together and we get this:
+
+```{r}
+plant_cult |>
+  ggplot(aes(x = reorder(cultivation, avg_harvest_wait),
+             y = avg_harvest_wait, fill = cultivation)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Average Harvest Wait by Cultivation Type",
+    x = "Cultivation Type",
+    y = "Average Harvest Wait"
+  ) +
+  theme_minimal()
+```
+
+Looks pretty good! Now we can just apply the same code and comparison across the other columns, just have to change the
+
+```{r}
+plant_cult |>
+  ggplot(aes(x = reorder(cultivation, avg_ph_tolerance),
+             y = avg_ph_tolerance, fill = cultivation)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Average pH Tolerance by Cultivation Type",
+    x = "Cultivation Type",
+    y = "Average pH Tolerance"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+plant_cult|>
+  ggplot(aes(x = reorder(cultivation, plant_count),
+             y = plant_count, fill = cultivation)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Number of Plants by Cultivation Type",
+    x = "Cultivation Type",
+    y = "Plant Count"
+  ) +
+  theme_minimal()
+```
+
+While showing a tibble is fine, ggplot allows you to visualize it to really show the impact.
