@@ -1,0 +1,113 @@
+---
+title: "TidyVerse CREATE assignment"
+author: "Khandker Qaiduzzaman"
+format: html
+editor: visual 
+---
+
+# Objective
+
+Analyze the global UFO sightings dataset using the TidyVerse packages in R. The goal is to clean, summarize, and visualize UFO sightings by country, year, and reported shapes to uncover trends and patterns in the data.
+
+# Approach
+
+### Dataset description
+
+For this assignment, I will use the UFO Sightings dataset from Kaggle, which is publicly available and can be accessed here:
+
+<https://raw.githubusercontent.com/NafeesKhandker/SPRING2026TIDYVERSE/refs/heads/main/UFO%20sighting.csv>
+
+The dataset contains observations of UFO sightings reported worldwide, including information about the date/time of the sighting, location (country, state, city), and the shape of the UFO reported.
+
+Key variables include:
+
+-   **datetime**: The date of the sighting
+-   **city**: City where the sighting occurred
+-   **state**: State/province
+-   **country**: Country code
+-   **shape**: Reported UFO shape
+-   **duration (seconds)**: Duration of the sighting
+-   **comments**: Additional notes about the sighting
+
+The dataset is not fully tidy, as some variables contain missing (`NA`) or `"NULL"` values, particularly in the `shape` and `country` columns. Cleaning and standardizing these values is necessary for analysis.
+
+### Anticipated Challenges
+
+One anticipated challenge is handling missing values in key variables such as `country` or `shape`. To address this, missing values will be removed or renamed as `"Unavailable"` to preserve the integrity of summaries and plots.
+
+Another challenge is handling the `datetime` column, which may require conversion from string format to proper Date objects for trend analysis over time.
+
+Finally, the dataset is moderately large, so summarization and plotting will require careful grouping and filtering to focus on meaningful patterns, such as top countries, top UFO shapes, and sightings over years.
+
+# Implementation
+
+```{r}
+# Load required packages
+library(tidyverse)
+library(gt)
+
+# 1) Load the dataset directly from GitHub
+ufo_url <- "https://raw.githubusercontent.com/NafeesKhandker/SPRING2026TIDYVERSE/refs/heads/main/UFO%20sighting.csv"
+ufo <- read_csv(ufo_url)
+
+# 2) Remove rows with NA in 'country' (cleaning the source dataframe) and inspect the data
+ufo <- ufo %>%
+  filter(!is.na(country))
+
+ufo  |> 
+  head(n = 5) |> 
+  gt()
+```
+
+```{r}
+# 3) Count sightings by country (excluding NA countries)
+sightings_by_country <- ufo %>%
+  group_by(country) %>%
+  summarise(total_sightings = n(), .groups = "drop") %>%
+  arrange(desc(total_sightings))
+
+print(sightings_by_country)
+```
+
+```{r}
+# 4) Plot top 10 countries by number of sightings
+top_countries <- sightings_by_country %>%
+  slice_head(n = 10)
+
+ggplot(top_countries, aes(x = reorder(country, total_sightings), y = total_sightings)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Countries by UFO Sightings",
+    x = "Country",
+    y = "Number of Sightings"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# 6) Common UFO shapes (replace NA/NULL with "Unavailable")
+top_shapes <- ufo %>%
+  mutate(shape = ifelse(is.na(shape) | shape == "NULL", "Unavailable", shape)) %>%
+  group_by(shape) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 10)
+
+# Plot the top 10 UFO shapes with multiple colors
+ggplot(top_shapes, aes(x = reorder(shape, count), y = count, fill = shape)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set3") +  # nice multi-color palette
+  labs(
+    title = "Top 10 UFO Shapes Reported",
+    x = "Shape",
+    y = "Number of Reports",
+    fill = "Shape"
+  ) +
+  theme_minimal()
+```
+
+# Conclusion
+
+The analysis of UFO sightings reveals that most reports come from a few key countries, sightings have increased over time, and a variety of UFO shapes are reported, with some shapes being more common than others. Cleaning and visualizing the data using TidyVerse packages made these patterns easy to identify.

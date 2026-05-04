@@ -1,0 +1,177 @@
+---
+title: "Tidyverse Assignment: Vignette - Analyze Medical Insurance cost"
+date: "`r Sys.Date()`"
+format: html
+editor: visual
+---
+
+### Introduction
+
+This vignette demonstrates how to use the `dplyr` and `ggplot2` packages within the TidyVerse to manipulate, summarize, and visualize healthcare data. I am using a sample from the Kaggle "Medical Insurance Cost Dataset", which looks at patient demographics, health related variables and their billed insurance medical charges.
+
+### Source
+
+Kaggle data set: https://www.kaggle.com/datasets/mosapabdelghany/medical-insurance-cost-dataset
+
+### Loading the TidyVerse
+
+First, load the `tidyverse` library to access the data engineering and visualization tools and load data set csv from the raw url on SPRING2026 TIDYVERSE repository.
+
+```{r setup, message=FALSE}
+library(tidyverse)
+# Raw GitHub URL for the Kaggle insurance dataset
+medical_costs <- read_csv("https://raw.githubusercontent.com/meiqing39/SPRING2026TIDYVERSE/refs/heads/main/insurance.csv")
+# Let's take a look at the first few rows
+head(medical_costs)
+```
+
+### Data manipulation with dyplr
+
+```{r}
+# Using mutate(), case_when() function to categorize
+costs_summary <- medical_costs |> 
+  mutate(bmi_category = case_when(
+    bmi < 18.5 ~ "Underweight",
+    bmi >= 18.5 & bmi < 24.9 ~ "Normal",
+    bmi >= 25 & bmi < 29.9 ~ "Overweight",
+    bmi >= 30 ~ "Obese"
+  )) |> 
+  group_by(smoker, bmi_category) |>
+  summarise(avg_charge = mean(charges), 
+            patient_count = n(), 
+            .groups = "drop") |> 
+  arrange(desc(avg_charge))
+print(costs_summary)
+```
+
+**Based on the cost summary table, it is revealed that smoking heavily impact costs. I will build a scatterplot to better visualize the relationship between a patient's BMI and their billed charge using colors to differentiate between smokers and non-smokers**
+
+### Data Visualization using ggplot2
+
+```{r}
+ggplot(medical_costs, aes(x = bmi, y = charges, color = smoker)) +
+  geom_point(size = 3, alpha = 0.6) +
+  scale_color_manual(values = c("yes" = "green", "no" = "red")) +
+  labs(
+    title = "Medical Charges by BMI and Smoking Status",
+    subtitle = "Smokers generally face higher billed charges, especially at higher BMIs",
+    x = "BMI",
+    y = "Billed Charges Amount",
+    color = "Smoker?"
+  )
+```
+
+### Findings and wrap-up
+
+By utilizing dplyr functions like mutate(), case_when(), group_by(), and summarise(); I was able to clean the raw data that was obtained from the Kaggle website and isolate the financial impact of smoking and BMI. Furthermore, ggplot2 allowed me to translate those summaries into a clear scatter plot with just a few lines of code which revealed the primary finding: **smokers face much more higher billed medical charges than non-smokers, and this financial penalty compounds drastically as a patient's BMI increases.**
+
+------------------------------------------------------------------------
+
+## Extension by Leon
+
+The original vignette does a great job showing how smoking and BMI relate to medical charges. This extension adds three additional TidyVerse techniques: `tidyr::pivot_longer()` for reshaping data, `dplyr::across()` for multi-column summaries, and a `ggplot2` faceted box plot to compare charge distributions across regions.
+
+### 1. `dplyr::across()` — Summarising Multiple Columns at Once
+
+The original vignette calculated `mean(charges)` for one variable at a time. `across()` lets you apply the same summary function to multiple columns simultaneously — useful when you want a quick numeric overview without repeating code.
+
+```{r}
+# Compute mean and standard deviation of all numeric columns, grouped by smoker status
+medical_costs |>
+  group_by(smoker) |>
+  summarise(
+    across(
+      where(is.numeric),          # Apply to every numeric column
+      list(mean = mean, sd = sd), # Two functions at once
+      .names = "{.col}_{.fn}"     # Name pattern: e.g. "bmi_mean", "charges_sd"
+    )
+  )
+```
+
+This reveals at a glance that smokers not only pay more on average, but also have **higher variability** in their charges — meaning the financial risk is less predictable for smokers than for non-smokers.
+
+------------------------------------------------------------------------
+
+### 2. `tidyr::pivot_longer()` — Reshaping for Faceted Plots
+
+`pivot_longer()` converts a wide data frame into a long one, which makes it easy to facet plots across multiple variables. Here we reshape `age`, `bmi`, and `charges` into a single column so we can compare their distributions by smoking status in one chart.
+
+```{r}
+# Reshape three numeric variables into long format
+medical_costs_long <- medical_costs |>
+  select(smoker, age, bmi, charges) |>
+  pivot_longer(
+    cols      = c(age, bmi, charges), # Columns to collapse
+    names_to  = "variable",           # New column holding the variable name
+    values_to = "value"               # New column holding the numeric value
+  )
+
+head(medical_costs_long)
+```
+
+Now each row represents one observation of one variable — making it straightforward to facet by `variable`.
+
+```{r fig.height=5, fig.width=9}
+# Faceted density plot: one panel per variable, colored by smoking status
+ggplot(medical_costs_long, aes(x = value, fill = smoker)) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~ variable, scales = "free") +  # Free scales since units differ
+  scale_fill_manual(values = c("yes" = "#E74C3C", "no" = "#2980B9")) +
+  labs(
+    title    = "Distribution of Age, BMI, and Charges by Smoking Status",
+    subtitle = "Charges are right-skewed for smokers; age and BMI distributions are similar",
+    x        = NULL,
+    y        = "Density",
+    fill     = "Smoker?"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+**Key insight:** Age and BMI are distributed nearly identically between smokers and non-smokers — confirming that the charge differences seen in the original vignette are driven by smoking itself, not by smokers being older or heavier on average.
+
+------------------------------------------------------------------------
+
+### 3. `ggplot2::geom_boxplot()` — Charge Distribution Across Regions
+
+The original vignette focused on the national picture. The dataset also includes a `region` column. Here we use a box plot to compare charge distributions across the four U.S. regions, keeping the smoker distinction from the original analysis.
+
+```{r fig.height=5, fig.width=9}
+# First reuse the bmi_category variable from the original vignette
+medical_costs <- medical_costs |>
+  mutate(bmi_category = case_when(
+    bmi < 18.5 ~ "Underweight",
+    bmi >= 18.5 & bmi < 24.9 ~ "Normal",
+    bmi >= 25 & bmi < 29.9 ~ "Overweight",
+    bmi >= 30 ~ "Obese"
+  ))
+
+ggplot(medical_costs, aes(x = region, y = charges, fill = smoker)) +
+  geom_boxplot(alpha = 0.7, outlier.size = 1) +
+  scale_fill_manual(values = c("yes" = "#E74C3C", "no" = "#2980B9")) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(
+    title    = "Medical Charges by Region and Smoking Status",
+    subtitle = "The smoking premium is consistent across all four U.S. regions",
+    x        = "Region",
+    y        = "Billed Charges",
+    fill     = "Smoker?"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+**Key insight:** The smoking surcharge is remarkably consistent across all four regions — the median charge for smokers is roughly 3–4× higher than for non-smokers regardless of geography. The Southeast shows slightly higher median charges overall, which may reflect its higher obesity rates.
+
+------------------------------------------------------------------------
+
+### Extension Summary
+
+| Function         | Package   | What it added                                   |
+|------------------|-----------|-------------------------------------------------|
+| `across()`       | `dplyr`   | Summarised multiple numeric columns in one step |
+| `pivot_longer()` | `tidyr`   | Reshaped data for multi-variable faceted plots  |
+| `facet_wrap()`   | `ggplot2` | Side-by-side density plots per variable         |
+| `geom_boxplot()` | `ggplot2` | Regional charge distribution comparison         |
+
+Together with the original vignette, these extensions show how `tidyr` reshaping unlocks more expressive `ggplot2` visualizations, and how `dplyr::across()` reduces repetitive summary code — two patterns that appear constantly in real-world data analysis workflows.

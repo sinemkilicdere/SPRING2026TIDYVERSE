@@ -1,0 +1,157 @@
+---
+title: "TidyVerse Create"
+author: "Dylan Gold"
+format: html
+editor: visual
+---
+
+# Introduction
+
+This project will demonstrate some of the core packages within in the tidyverse collection.\
+This project will focus on using dplyr to help restructure our data, as well as ggplot which will help us create visualizations our data set.\
+The data set used to display some of these core packages is a data set found from Kaggle containing global grocery inflation for several common foods over the last several months(from 10-2025).\
+The data set can be found at https://www.kaggle.com/datasets/waddahali/global-grocery-inflation-20252026\
+
+# Codebase
+
+Load the tidyverse.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse) # load tidyverse library (installed prior)
+```
+
+## Importing the data
+
+First we import the data using read_csv. This is actually a tidyverse function from the readr package.
+
+```{r message=FALSE}
+url <- "https://raw.githubusercontent.com/DylanGoldJ/SPRING2026TIDYVERSE/refs/heads/main/FoodData.csv"
+df <- read_csv(
+  file = url,
+  col_names = TRUE
+)
+
+head(df, 8)
+```
+
+## Using dplyr
+
+### Filter
+
+We can use dplyr to sort our data and select rows based on specific features. Lets say we want to focus on Chicago as our city.\
+We can use filter to filter our rows for Chicago as a city.\
+We can display this with the head and see that we created a new data frame for our rows with Chicago.
+
+```{r}
+chicago <- df %>% 
+  filter(City == "Chicago")
+
+head(chicago)
+```
+
+### Select
+
+There are many columns, some of which we do not need. We can use select to pick out certain columns that we want.\
+We can create a list to put as the column values we want. We will also use dplyr's all_of to convert our list to a character vector for the select.\
+This can also change the order of the columns
+
+```{r}
+col_values <- c("Month", "Item", "City", "Country", "Price_USD", "Exchange_Rate", "Currency_Local" )
+
+short_df <- df %>% select(all_of(col_values))
+head(short_df)
+```
+
+### Mutate
+
+We have the Price_USD column as well as Exchange_rate. Using our shortened data frame we can use dplyrs mutate function to create new columns.\
+By dividing the USD price by the exchange rate we can create a local currency amount. We can create a new column for this value.
+
+```{r}
+short_df <- short_df %>%
+  mutate(Price_local = Price_USD/Exchange_Rate)
+
+head(short_df)
+```
+
+### Group_by
+
+Lets say we want to find the global average price of an item in USD for each month.\
+We can use group_by() with some of the other previously shown dplyr functions to do this.\
+We can first group by both the month and the item while getting the average value.\
+We also need to create a new column with mutate and we can use the aggregate function mean() inside of a groupby to get the average.\
+Finally we can select the columns we need which is just the month, item and average price. We can chain subsequent function calls with the %\>% operator.\
+
+```{r}
+global_avg <- short_df %>%
+  group_by(Month, Item) %>%
+  mutate(average_price_USD = mean(Price_USD)) %>%
+  select("Month", "Item", "average_price_USD") %>%
+  ungroup() # Ungroup when done 
+
+head(global_avg, 8)
+```
+
+If we wanted to see specific items we could use filter to see with this data frame. For example we can take a look at the price of eggs
+
+```{r}
+global_avg %>%
+  filter(Item == "Eggs (Regular, 12)") %>%
+  head()
+
+```
+
+Lets try another example.\
+Lets get the average price of each item for each month by country\
+
+```{r}
+avg_by_country <- short_df %>%
+  group_by(Month, Item, Country) %>%
+  mutate(average_price_USD = mean(Price_USD)) %>%
+  select("Month", "Item", "Country", "average_price_USD") %>%
+  ungroup()
+
+head(avg_by_country, 8)
+```
+
+Now we have a data frame containing the average price of each item in each month for each country.\
+Lets say we want to see changes in each item for the United States.\
+A data frame has all the data but does not display it well. For this we will use ggplot. I will create a new data frame for ggplot here with dplyr, using filter to focus on the United States.\
+We also can convert the month from a character to a date type to better graph it with ggplot. \
+We can use mutate to not only make new columns, but modify old ones.\
+I will also use select to un-select the country column now that we just have a single column.
+
+```{r}
+us_avg_prices <- avg_by_country %>%
+  filter(Country == "United States") %>%
+  select(-Country) %>%# By using - we can also just remove certain column(s) if needed
+  mutate(Month = as.Date(paste0(Month, "-01"), format("%Y-%m-%d"))) # Add -01 to end of date(default to first), then convert with given format to date type
+head(us_avg_prices)
+```
+
+## Using ggplot
+
+By using ggplot we can create a graph for this information. We previously created a data frame that can be easily plotted.\
+We can use %>% to pipe our data frame into the ggplot function\
+X axis is the months.\
+Y axis is the price.\
+We can set the group and color equal to the different items.
+
+```{r}
+us_avg_prices %>% 
+ggplot(aes(x = Month, y = average_price_USD, group = Item, color = Item)) + # Call ggplot with aes describing the different axis and groups
+  geom_line() + # Line plot
+  geom_point() + # Add dots for each point
+  # Labels
+  labs(title = "Average Price of Selected Groceries in The United States",
+        x = "Month",
+        y = "Average Price (USD)")
+
+```
+
+We have now created a time plot using ggplot that takes advantage of having a date type as an x axis as well as creating different lines for different groups of values within a column.
+
+# Conclusion
+
+In conclusion we were able to demonstrate several capabilities in the tidyverse, such as using the dplyr package to filter, select, mutate, and group a data frame. By combining these capabilities we were able to create a data frame showing the average price of different groceries in the United States over the past few months. By using the ggplot package we were also able to demonstrate the graphing capabilities in the tidyverse by graphing our previously created data frame.\
+Some things I could do to build on this project is to look at other countries and do more analysis on the specific trends, like whether or not all foods follow the same trend price increase, whether or not that trend is similar among different countries and more.

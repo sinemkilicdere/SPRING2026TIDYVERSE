@@ -1,0 +1,108 @@
+
+---
+title: "Analyzing Student Burnout Using dplyr"
+author: "Theresa Benny"
+output: html_document
+---
+
+## Overview
+
+This vignette demonstrates how to use dplyr functions from the tidyverse to analyze student mental health and burnout data. The goal is to explore patterns in burnout among students using a real dataset.
+
+## Load libraries
+
+```{r}
+library(tidyverse)
+
+## Load dataset
+data <- read_csv("student_mental_health_burnout.csv")
+
+data_small <- data %>%
+  select(
+    academic_pressure_score,
+    burnout_level,
+    daily_study_hours,
+    daily_sleep_hours
+  )
+
+data_small <- data_small %>%
+  mutate(
+    pressure_group = case_when(
+      academic_pressure_score <= 3 ~ "Low",
+      academic_pressure_score <= 7 ~ "Medium",
+      TRUE ~ "High"
+    )
+  )
+
+data_small <- data_small %>%
+  mutate(
+    burnout_numeric = case_when(
+      burnout_level == "Low" ~ 1,
+      burnout_level == "Medium" ~ 2,
+      burnout_level == "High" ~ 3
+    )
+  )
+
+table(data_small$pressure_group)
+```
+```{r}
+#Now that we have the select columns needed to analyze the statistics
+
+burnout_group_analysis <- data_small %>%
+  group_by(pressure_group) %>%
+  summarise(
+    avg_burnout = mean(burnout_numeric, na.rm = TRUE),
+    student_count = n()
+  ) %>%
+  arrange(desc(avg_burnout))
+
+burnout_group_analysis
+```
+Let's visualize this more clearly
+
+```{r}
+ggplot(burnout_group_analysis, aes(x = pressure_group, y = avg_burnout)) +
+  geom_col() +
+  labs(
+    title = "Average Burnout by Academic Pressure Level",
+    x = "Academic Pressure Level",
+    y = "Average Burnout (1 = Low, 3 = High)"
+  )
+```
+The analysis shows that average burnout levels are relatively consistent across different levels of academic pressure. 
+While it might be expected that higher academic pressure leads to significantly higher burnout, this dataset does not show a strong or meaningful difference in average burnout across groups.
+
+This demonstrates that not all variables have a strong relationship, and highlights the importance of validating assumptions with data. 
+The tidyverse tools used in this example—such as dplyr for grouping and summarizing—help make it easy to explore and evaluate these relationships.
+
+## 🔹 Extension by Izza Khan
+
+```{r}
+library(tidyverse)
+
+extended_analysis <- data_small %>%
+  group_by(pressure_group) %>%
+  summarise(
+    avg_burnout = mean(burnout_numeric, na.rm = TRUE),
+    count = n()
+  )
+
+extended_analysis
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(extended_analysis, aes(x = pressure_group, y = avg_burnout)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Extended Analysis: Burnout by Pressure Group",
+    x = "Pressure Group",
+    y = "Average Burnout"
+  )
+```
+
+### Explanation
+
+This extension builds on the original analysis by using the cleaned dataset (data_small) to further explore burnout patterns. It summarizes average burnout by pressure group and visualizes the results.

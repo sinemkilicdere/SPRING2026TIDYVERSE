@@ -1,0 +1,349 @@
+---
+title: 'TidyVerse Vignette: Visualizing Student Mental Health & Burnout with ggplot2'
+author: "Mark Hamer"
+date: "March 28, 2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: tango
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## What's This About?
+
+In this vignette, we're going to use **ggplot2** to dig into a dataset about student mental health and burnout. The data comes from a student survey, so it's pretty relatable stuff — stress, sleep, burnout, whether people actually asked for help.
+
+We'll walk through five different plot types, all built with ggplot2:
+
+- `geom_histogram()` — to see how burned out students are overall
+- `geom_boxplot()` — to compare burnout across genders
+- `geom_point()` + `geom_smooth()` — to see if stress and burnout move together
+- `geom_bar()` — to check if burnout gets worse over the years
+- `facet_wrap()` — to split one plot into panels for easy comparison
+
+Each plot comes with an explanation of what it's doing and what to look for.
+
+---
+
+## The Dataset
+
+The data is from Kaggle:
+[Student Mental Health and Burnout](https://www.kaggle.com/datasets/sharmajicoder/student-mental-health-and-burnout)
+
+Here's a quick rundown of the columns we'll be working with:
+
+| Variable | Description |
+|---|---|
+| `Age` | Student's age |
+| `Gender` | Student's gender |
+| `Year_of_Study` | Year in their program |
+| `Sleep_Hours` | Average hours of sleep per night |
+| `Study_Hours` | Average hours of study per day |
+| `Stress_Level` | Self-reported stress (1–10) |
+| `Burnout_Level` | Self-reported burnout (1–10) |
+| `Mental_Health_Score` | Overall mental health score |
+| `Sought_Help` | Did they seek mental health help? (Yes/No) |
+
+---
+
+## Let's Load Everything
+
+We just need the tidyverse and our dataset. If you haven't installed it yet, uncomment that first line and run it once.
+
+```{r load-libraries}
+
+library(tidyverse)
+```
+
+```{r load-data}
+# Make sure the CSV is in the same folder as this .Rmd file!
+df <- read_csv("student_mental_health_burnout.csv")
+
+glimpse(df)
+```
+```{r clean-data}
+# Dropping missing values and making sure categories are treated as factors
+df <- df |>
+  drop_na() |>
+  mutate(
+    gender       = as.factor(gender),
+    academic_year = as.factor(academic_year),
+    risk_level   = as.factor(risk_level)
+  )
+
+nrow(df)
+```
+
+## Plot 1: How Burned Out Are Students?
+
+Let's start simple — just how bad is the burnout situation? A histogram gives us a quick look at how burnout scores are spread across all students.
+```{r histogram-burnout}
+ggplot(df, aes(x = burnout_score)) +
+  geom_histogram(
+    binwidth = 1,
+    fill     = "#E76F51",
+    color    = "white",
+    alpha    = 0.85
+  ) +
+  labs(
+    title    = "How Burned Out Are Students?",
+    subtitle = "Burnout scored on a continuous scale",
+    x        = "Burnout Level",
+    y        = "Number of Students",
+    caption  = "Source: Kaggle – Student Mental Health & Burnout"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal(base_size = 13)
+```
+
+The burnout scores here are continuous — a score closer to 0 means little 
+to no burnout, while anything pushing toward 10 is pretty severe. Most 
+students are clustered on the lower end, which sounds good, but that big 
+bar near 0 might just mean a lot of students haven't hit their breaking 
+point *yet*.
+
+---
+
+## Plot 2: Does Burnout Differ by Gender?
+
+Next let's see if burnout looks different across genders. A box plot is great for this. It'll show the middle range of scores and flags anyone who's way above or below average.
+
+A taller box means scores are more spread out within that group. Compare the middle lines to see who's feeling it more.
+```{r boxplot-gender}
+ggplot(df, aes(x = gender, y = burnout_score, fill = gender)) +
+  geom_boxplot(alpha = 0.7, outlier.color = "firebrick") +
+  labs(
+    title    = "Burnout by Gender",
+    subtitle = "The line in the middle of each box is the median",
+    x        = "Gender",
+    y        = "Burnout Level (1–10)",
+    caption  = "Source: Kaggle – Student Mental Health & Burnout"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+
+All three groups have a pretty similar median burnout score — so gender 
+doesn't seem to make a huge difference for most students. But those red 
+dots up top are worth noticing. Every gender has outliers pushing toward 
+10, meaning there's a small group of seriously burned out students across 
+the board.
+
+"Other" likely includes non-binary and genderqueer students, or anyone 
+who didn't identify with the Male/Female options on the survey.
+
+## Plot 3: Do Stressed Students Burn Out More?
+
+This one's pretty intuitive, if you're stressed, are you also more burned out? A scatter plot with a trend line helps us see if there's actually a pattern there.
+
+If that line slopes upward, yeah — more stress really does mean more burnout.
+
+```{r scatter-stress-burnout}
+ggplot(df, aes(x = stress_level, y = burnout_score)) +
+  geom_point(
+    aes(color = gender),
+    alpha = 0.5,
+    size  = 2
+  ) +
+  geom_smooth(
+    method = "lm",
+    se     = TRUE,
+    color  = "black",
+    linewidth = 1
+  ) +
+  labs(
+    title    = "Stress vs. Burnout",
+    subtitle = "Each dot is one student — the black line is the overall trend",
+    x        = "Stress Level (1–10)",
+    y        = "Burnout Level (1–10)",
+    color    = "Gender",
+    caption  = "Source: Kaggle – Student Mental Health & Burnout"
+  ) +
+  scale_color_brewer(palette = "Set1") +
+  theme_minimal(base_size = 13)
+```
+
+
+Yeah, pretty much what you'd expect, the trend line goes up steadily, 
+meaning students with higher stress levels also tend to have higher burnout 
+scores. The dots are packed pretty tight because there's a million rows of 
+data, but the direction is clear. All three genders follow the same pattern 
+too, which matches what we saw in the box plot.
+
+---
+
+## Plot 4: Does Burnout Get Worse Over the Years?
+
+You'd think burnout piles up the longer you're in school. Let's check. We'll calculate the average burnout per year first, then plot it.
+
+If the bars keep climbing, senior year is rough. If they're flat the burnout hits early and stays there.
+```{r bar-year}
+burnout_by_year <- df |>
+  group_by(academic_year) |>
+  summarise(
+    Mean_Burnout = mean(burnout_score, na.rm = TRUE),
+    SE           = sd(burnout_score, na.rm = TRUE) / sqrt(n())
+  )
+
+ggplot(burnout_by_year, aes(x = academic_year, y = Mean_Burnout, fill = academic_year)) +
+  geom_bar(stat = "identity", alpha = 0.85, width = 0.6) +
+  geom_errorbar(
+    aes(ymin = Mean_Burnout - SE, ymax = Mean_Burnout + SE),
+    width = 0.2, linewidth = 0.8
+  ) +
+  labs(
+    title    = "Average Burnout by Year of Study",
+    subtitle = "Error bars show ± 1 standard error",
+    x        = "Year of Study",
+    y        = "Mean Burnout Level",
+    caption  = "Source: Kaggle – Student Mental Health & Burnout"
+  ) +
+  scale_fill_brewer(palette = "Blues") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+
+Honestly, not what you'd expect! Burnout stays almost completely flat 
+across all four years — first years and fourth years are equally burned 
+out on average. With a million students in the dataset the error bars are 
+tiny, so this isn't just noise. It seems like burnout hits early and just 
+stays there rather than building up over time.
+---
+
+## Plot 5: Does Sleep Help? And Does Asking for Help Matter?
+
+Last one. We're looking at whether more sleep means better mental health — and splitting it by whether the student sought help or not. `facet_wrap()` gives us two side-by-side panels so the comparison is easy.
+
+If the slope is steeper for students who sought help, it suggests that sleep and professional support together make a real difference.
+```{r facet-sleep-mental-health}
+ggplot(df, aes(x = sleep_hours, y = mental_health_index, color = risk_level)) +
+  geom_point(alpha = 0.3, size = 1.2) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 1.2) +
+  facet_wrap(~ risk_level, labeller = label_both) +
+  labs(
+    title    = "Sleep Hours vs. Mental Health Score",
+    subtitle = "Split by student dropout risk level",
+    x        = "Sleep Hours per Night",
+    y        = "Mental Health Score",
+    color    = "Risk Level",
+    caption  = "Source: Kaggle – Student Mental Health & Burnout"
+  ) +
+  scale_color_manual(values = c("Low" = "#2A9D8F", "Medium" = "#E9C46A", "High" = "#E76F51")) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom")
+```
+
+The High risk panel is the most readable here — mental health scores are 
+lower and more spread out for students flagged as high dropout risk, which 
+makes sense. The Low and Medium panels are pretty packed since most students 
+fall into those categories. The big takeaway is that high risk students have 
+noticeably lower mental health scores overall, regardless of how much they sleep.
+
+## Plot 6: Does Financial Stress Lead to Burnout?
+
+Money stress is a real thing for students — tuition, rent, food. Let's see if it actually shows up in burnout scores.
+```{r scatter-financial-burnout}
+ggplot(df, aes(x = financial_stress, y = burnout_score)) +
+  geom_point(
+    aes(color = risk_level),
+    alpha = 0.3,
+    size  = 1.2
+  ) +
+  geom_smooth(
+    method = "lm",
+    se     = TRUE,
+    color  = "black",
+    linewidth = 1
+  ) +
+  labs(
+    title    = "Financial Stress vs. Burnout",
+    subtitle = "Each dot is one student — colored by dropout risk level",
+    x        = "Financial Stress Score",
+    y        = "Burnout Score",
+    color    = "Risk Level",
+    caption  = "Source: Kaggle – Student Mental Health & Burnout"
+  ) +
+  scale_color_manual(values = c("Low" = "#2A9D8F", "Medium" = "#E9C46A", "High" = "#E76F51")) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom")
+```
+
+This one's pretty telling. The three risk levels naturally separate into 
+bands — high risk students sit at the top with higher burnout scores, low 
+risk at the bottom. The trend line slopes upward, so more financial stress 
+does push burnout higher. But notice how the bands stretch across the full 
+range of financial stress scores — students are dealing with money stress 
+regardless of their risk level. It's just that high risk students are 
+already burned out on top of it.
+
+## Wrapping Up
+
+So what did we actually find? A few things stand out across all six plots:
+
+- Burnout is mostly low for most students, but there's always a subset 
+who are really struggling — every plot showed that pattern
+- Stress and burnout move together pretty closely — no surprise there
+- Burnout doesn't get worse over the years, it just kind of stays flat 
+from day one
+- High dropout risk students have both lower mental health scores and 
+higher burnout across the board
+- Financial stress nudges burnout up, but students are dealing with money 
+stress no matter what risk level they're in
+
+As for ggplot2 — here's a quick recap of everything we used:
+
+| Plot | Function | What it showed |
+|---|---|---|
+| Histogram | `geom_histogram()` | Overall spread of burnout scores |
+| Box plot | `geom_boxplot()` | Burnout differences across genders |
+| Scatter + trend | `geom_point()` + `geom_smooth()` | Stress vs. burnout |
+| Bar chart | `geom_bar()` | Average burnout by year of study |
+| Faceted scatter | `facet_wrap()` | Sleep vs. mental health by risk level |
+| Scatter + trend | `geom_point()` + `geom_smooth()` | Financial stress vs. burnout |
+
+---
+
+*Dataset: [Kaggle – Student Mental Health and Burnout](https://www.kaggle.com/datasets/sharmajicoder/student-mental-health-and-burnout)*
+---
+
+### Extended by Radzhana Rabdanova
+
+
+# In this section, I will extend the previous analysis by:
+# 1. Filtering out unrealistic age values.
+# 2. Grouping the data by treatment status and family history.
+# 3. Visualizing the results using a bar chart.
+
+library(dplyr)
+library(ggplot2)
+
+# Assuming the dataframe is named 'data' or 'df' (based on the original code)
+# Let's clean and summarize the data
+mental_health_summary <- data %>%
+  filter(Age > 10 & Age < 80) %>% # Focus on a realistic age range
+  group_by(treatment, family_history) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Create a clear visualization
+ggplot(mental_health_summary, aes(x = treatment, y = count, fill = family_history)) +
+  geom_col(position = "dodge") +
+  theme_minimal() +
+  labs(
+    title = "Treatment Seeking vs. Family History",
+    subtitle = "Analysis of mental health data using TidyVerse",
+    x = "Did they seek treatment?",
+    y = "Number of respondents",
+    fill = "Family History"
+  ) +
+  scale_fill_brewer(palette = "Set2") # Make colors look professional
+

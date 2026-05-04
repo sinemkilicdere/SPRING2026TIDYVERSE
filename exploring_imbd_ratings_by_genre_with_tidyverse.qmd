@@ -1,0 +1,363 @@
+---
+title: "exploring_imbd_ratings_by_genre_with_tidyverse"
+author: "Brandon Chanderban"
+date:   "March 29, 2026"
+format:
+  html:
+    toc: true
+    code-fold: show
+    theme: flatly
+execute:
+  echo:    true
+  warning: false
+---
+
+# Introduction
+
+The purpose of this vignette lies in demonstrating how several TidyVerse packages, including **readr**, **dplyr**, **tidyr**, and **ggplot2**, may be used to import, tidy, transform, summarize, and visualize a real-world dataset. For this example, an IMDb dataset containing information on the top 1000 movies and television shows will be drawn upon.
+
+A particular point of note within this dataset shall be the genre field. Since multiple genres here are often housed within a single observation, separated by commas, this column is not immediately in a "tidy" format for grouped analysis. As such, one useful capability of the TidyVerse, more specifically, the **separate_rows()** functionality from **tidyr**, will be employed in order to transform this field into a more analysis-ready structure.
+
+The broad analytical question to be explored in this vignette is: **How do average IMDb ratings vary across the different genres?**
+
+# Code Base
+
+At this point, our first step involves loading the required packages.
+
+```{r load-required-packages}
+
+library(tidyverse)
+library(janitor)
+```
+
+Note that although the tidyverse meta-package is loaded above, this vignette will particularly make use of functions from readr, dplyr, tidyr, and ggplot2 (as stated within the introduction). In addition, the clean_names() functionality from janitor will also be used to standardize the imported dataset's column names.
+
+## Importing the Dataset
+
+For reproducibility purposes, the dataset has been downloaded from its initial [kaggle](https://www.kaggle.com/datasets/harshitshankhdhar/imdb-dataset-of-top-1000-movies-and-tv-shows?resource=download) housing, and in turn hosted on GitHub, to be accessed directly via its raw URL.
+
+```{r import-imdb-dataset}
+
+imdb <- read_csv("https://raw.githubusercontent.com/bkchanderban/CUNY_SPS/refs/heads/main/DATA607/DATA607/TidyVerse%20Create/imdb_top_1000.csv") %>%
+  clean_names()
+```
+
+## Inspecting the Data
+
+Before performing any further transformations or analyses upon the dataset, it is useful to inspect the structure of the dataset in order to discern the available variables and their formats.
+
+```{r glimpse-imdb}
+
+glimpse(imdb)
+```
+
+A quick preview of the first few rows of the dataset may also aid in comprehending how the data is organized.
+
+```{r obtain-head-of-dataset}
+
+head(imdb)
+```
+
+## Selecting the Variables of Interest
+
+For the purposes of this example, only a subset of the available variables/columns will be retained. These include the title of the work, its genre classification, IMDb rating, runtime, and gross earnings.
+
+```{r select-desired-variables}
+
+imdb_sub <- imdb %>%
+  select(series_title, genre, imdb_rating, runtime, gross)
+```
+
+## Tidying the "Genre" Field With Tidyr
+
+In this dataset, the genre column often contains multiple genre values within a single cell, such as "Action, Comedy" or "Romance, Drama". While this format may be acceptable for a descriptive display, it is not necessarily ideal for the sort of grouped analysis that we are attempting, since each genre is not represented as its own observation.
+
+In remedying this, the **separate_rows()** functionality from **tidyr** may be used to split the genre column into multiple rows, with one genre per row. This will serve as the focal TidyVerse capability being demonstrated in this vignette.
+
+```{r separate-genre-rows}
+
+imdb_genre <- imdb_sub %>%
+  separate_rows(genre, sep = ", ")
+```
+
+We can now inspect the transformed dataset below.
+
+```{r inspect-transformed-genres}
+
+head(imdb_genre)
+```
+
+## Summarizing the Average IMDb Ratings by Genre
+
+Now that each genre occupies its own row, the data is in a more suitable form for the execution of grouped analysis upon the genre column. Using the **group_by()** and **summarise()** functions from **dplyr**, the average IMDb rating and number of titles per genre may then be calculated.
+
+```{r summarize-average-imdb-ratings}
+
+genre_summary <- imdb_genre %>%
+  group_by(genre) %>%
+  summarise(
+    avg_rating = mean(imdb_rating, na.rm = TRUE),
+    n_titles = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(avg_rating))
+
+#The resulting summary table may then be displayed below:
+genre_summary
+```
+
+## Filtering Based on the Number of Titles
+
+Since some genres may appear only a handful of times within the top 1000 list, it might be useful to focus upon only those genres with a more substantial number of observations. In this case, genres represented by at least 30 titles will be retained for visualization downstream.
+
+```{r filter-based-on-num-of-titles}
+
+filtered_genre_summary <- genre_summary %>%
+  filter(n_titles >= 30)
+
+filtered_genre_summary
+```
+
+The results of our filtered process above saw a reduction from 21 rows/genres, within the initial genre_summary data frame, to 17 rows/genres within the filtered_genre_summary data frame. This therefore means that 4 genres were removed for possessing fewer than 30 titles within the top 1000 list.
+
+## Visualizing the Results
+
+A bar chart may now be created using **ggplot2** in order to compare the average IMDb ratings across the remaining 17 genres.
+
+```{r generate-bar-chart}
+
+filtered_genre_summary %>%
+  ggplot(aes(x = reorder(genre, avg_rating), y = avg_rating)) +
+  geom_col() +
+  geom_text(aes(label = round(avg_rating, 3)),
+            hjust = -0.1, size = 3) +
+  coord_flip(ylim = c(7.5, 8.3)) +
+  labs(
+    title = "Average IMDb by Genre",
+    subtitle = "Genres with at least 30 titles in the IMDb top 1000 dataset",
+    x = "Genres",
+    y = "Average Rating"
+  ) +
+  theme_minimal()
+```
+
+## Observations
+
+From the visualization, it is evident that the average IMDb ratings across genres are relatively tightly clustered, generally falling within a narrow range of approximately 7.888 to just above 8.014. Despite this limited spread, a clear ranking among the genres was observed.
+
+The War genre exhibits the highest average rating at approximately 8.01, followed closely by Sci-Fi and Mystery, all of which maintain averages near or above the 7.96 rating mark. As such, these genres appear to be consistently well-received within the IMDb Top 1000 dataset.
+
+In contrast, genres such as Horror, Comedy, and Thriller occupy the lower end of the distribution, with average ratings ranging from approximately 7.89 to 7.91. While the differences between the genres are numerically small, the ordering suggests slight but consistent variation in the reception of audiences and critics.
+
+Overall, the visualization highlights that although all included genres perform relatively well in terms of ratings, certain genres demonstrate a (frankly) marginal but noticeable advantage over others.
+
+# Conclusion
+
+This analysis demonstrates how TidyVerse tools can be used to transform and analyze a dataset containing multivalued categorical variables, specifically through the use of separate_rows() to restructure the genre field into a tidy format.
+
+Once tidied, the data could be efficiently grouped, summarized, and visualized to reveal patterns in average IMDb ratings across genres. Although the variation is relatively small, the visualization still allows for meaningful comparisons and highlights subtle differences in genre performance.
+
+Additionally, the use of axis scaling (via coordinate adjustment) and value labeling improved the interpretability of the visualization, ensuring that small differences were clearly communicated without distorting the data.
+
+Overall, this vignette illustrates the practical interoperability of TidyVerse packages in handling real-world data challenges, from data cleaning to visualization, within a coherent and reproducible workflow.
+
+## Extended Code (Robert Gomez)
+
+Extension 1: This extension builds upon the prior grouped summary by using summarise() to calculate multiple descriptive statistics simultaneously within grouped data.
+
+Extension 2: This section uses facet_wrap(), a ggplot2 feature that helps create small‑multiple plots. Faceting is particularly useful when comparing distributions across many categorical groups.
+
+```{r}
+# Extension 1: Descriptive Statistics
+genre_variability <- imdb_genre %>%
+  group_by(genre) %>%
+  summarise(avg_rating = mean(imdb_rating, na.rm = TRUE),
+            sd_rating  = sd(imdb_rating, na.rm = TRUE),
+            iqr_rating = IQR(imdb_rating, na.rm = TRUE),
+            n_titles   = n(),
+            .groups = "drop") %>%
+  filter(n_titles >= 30) %>%
+  arrange(desc(sd_rating))
+
+genre_variability
+
+# Extension 2: Visualization
+imdb_genre %>%
+  filter(genre %in% filtered_genre_summary$genre) %>%
+  ggplot(aes(x = genre, y = imdb_rating)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  facet_wrap(~ genre, scales = "free_y") +
+  labs(title = "Distribution of IMDb Ratings by Genre",
+       subtitle = "Genres with at least 30 titles in the IMDb Top 1000 dataset",
+       x = "Genre",
+       y = "IMDb Rating") +
+  theme_minimal() +
+  theme(strip.text = element_text(size = 8),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+```
+=======
+---
+title: "exploring_imbd_ratings_by_genre_with_tidyverse"
+author: "Brandon Chanderban"
+date:   "March 29, 2026"
+format:
+  html:
+    toc: true
+    code-fold: show
+    theme: flatly
+execute:
+  echo:    true
+  warning: false
+---
+
+# Introduction
+
+The purpose of this vignette lies in demonstrating how several TidyVerse packages, including **readr**, **dplyr**, **tidyr**, and **ggplot2**, may be used to import, tidy, transform, summarize, and visualize a real-world dataset. For this example, an IMDb dataset containing information on the top 1000 movies and television shows will be drawn upon.
+
+A particular point of note within this dataset shall be the genre field. Since multiple genres here are often housed within a single observation, separated by commas, this column is not immediately in a "tidy" format for grouped analysis. As such, one useful capability of the TidyVerse, more specifically, the **separate_rows()** functionality from **tidyr**, will be employed in order to transform this field into a more analysis-ready structure.
+
+The broad analytical question to be explored in this vignette is: **How do average IMDb ratings vary across the different genres?**
+
+# Code Base
+
+At this point, our first step involves loading the required packages.
+
+```{r load-required-packages}
+
+library(tidyverse)
+library(janitor)
+```
+
+Note that although the tidyverse meta-package is loaded above, this vignette will particularly make use of functions from readr, dplyr, tidyr, and ggplot2 (as stated within the introduction). In addition, the clean_names() functionality from janitor will also be used to standardize the imported dataset's column names.
+
+## Importing the Dataset
+
+For reproducibility purposes, the dataset has been downloaded from its initial [kaggle](https://www.kaggle.com/datasets/harshitshankhdhar/imdb-dataset-of-top-1000-movies-and-tv-shows?resource=download) housing, and in turn hosted on GitHub, to be accessed directly via its raw URL.
+
+```{r import-imdb-dataset}
+
+imdb <- read_csv("https://raw.githubusercontent.com/bkchanderban/CUNY_SPS/refs/heads/main/DATA607/DATA607/TidyVerse%20Create/imdb_top_1000.csv") %>%
+  clean_names()
+```
+
+## Inspecting the Data
+
+Before performing any further transformations or analyses upon the dataset, it is useful to inspect the structure of the dataset in order to discern the available variables and their formats.
+
+```{r glimpse-imdb}
+
+glimpse(imdb)
+```
+
+A quick preview of the first few rows of the dataset may also aid in comprehending how the data is organized.
+
+```{r obtain-head-of-dataset}
+
+head(imdb)
+```
+
+## Selecting the Variables of Interest
+
+For the purposes of this example, only a subset of the available variables/columns will be retained. These include the title of the work, its genre classification, IMDb rating, runtime, and gross earnings.
+
+```{r select-desired-variables}
+
+imdb_sub <- imdb %>%
+  select(series_title, genre, imdb_rating, runtime, gross)
+```
+
+## Tidying the "Genre" Field With Tidyr
+
+In this dataset, the genre column often contains multiple genre values within a single cell, such as "Action, Comedy" or "Romance, Drama". While this format may be acceptable for a descriptive display, it is not necessarily ideal for the sort of grouped analysis that we are attempting, since each genre is not represented as its own observation.
+
+In remedying this, the **separate_rows()** functionality from **tidyr** may be used to split the genre column into multiple rows, with one genre per row. This will serve as the focal TidyVerse capability being demonstrated in this vignette.
+
+```{r separate-genre-rows}
+
+imdb_genre <- imdb_sub %>%
+  separate_rows(genre, sep = ", ")
+```
+
+We can now inspect the transformed dataset below.
+
+```{r inspect-transformed-genres}
+
+head(imdb_genre)
+```
+
+## Summarizing the Average IMDb Ratings by Genre
+
+Now that each genre occupies its own row, the data is in a more suitable form for the execution of grouped analysis upon the genre column. Using the **group_by()** and **summarise()** functions from **dplyr**, the average IMDb rating and number of titles per genre may then be calculated.
+
+```{r summarize-average-imdb-ratings}
+
+genre_summary <- imdb_genre %>%
+  group_by(genre) %>%
+  summarise(
+    avg_rating = mean(imdb_rating, na.rm = TRUE),
+    n_titles = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(avg_rating))
+
+#The resulting summary table may then be displayed below:
+genre_summary
+```
+
+## Filtering Based on the Number of Titles
+
+Since some genres may appear only a handful of times within the top 1000 list, it might be useful to focus upon only those genres with a more substantial number of observations. In this case, genres represented by at least 30 titles will be retained for visualization downstream.
+
+```{r filter-based-on-num-of-titles}
+
+filtered_genre_summary <- genre_summary %>%
+  filter(n_titles >= 30)
+
+filtered_genre_summary
+```
+
+The results of our filtered process above saw a reduction from 21 rows/genres, within the initial genre_summary data frame, to 17 rows/genres within the filtered_genre_summary data frame. This therefore means that 4 genres were removed for possessing fewer than 30 titles within the top 1000 list.
+
+## Visualizing the Results
+
+A bar chart may now be created using **ggplot2** in order to compare the average IMDb ratings across the remaining 17 genres.
+
+```{r generate-bar-chart}
+
+filtered_genre_summary %>%
+  ggplot(aes(x = reorder(genre, avg_rating), y = avg_rating)) +
+  geom_col() +
+  geom_text(aes(label = round(avg_rating, 3)),
+            hjust = -0.1, size = 3) +
+  coord_flip(ylim = c(7.5, 8.3)) +
+  labs(
+    title = "Average IMDb by Genre",
+    subtitle = "Genres with at least 30 titles in the IMDb top 1000 dataset",
+    x = "Genres",
+    y = "Average Rating"
+  ) +
+  theme_minimal()
+```
+
+## Observations
+
+From the visualization, it is evident that the average IMDb ratings across genres are relatively tightly clustered, generally falling within a narrow range of approximately 7.888 to just above 8.014. Despite this limited spread, a clear ranking among the genres was observed.
+
+The War genre exhibits the highest average rating at approximately 8.01, followed closely by Sci-Fi and Mystery, all of which maintain averages near or above the 7.96 rating mark. As such, these genres appear to be consistently well-received within the IMDb Top 1000 dataset.
+
+In contrast, genres such as Horror, Comedy, and Thriller occupy the lower end of the distribution, with average ratings ranging from approximately 7.89 to 7.91. While the differences between the genres are numerically small, the ordering suggests slight but consistent variation in the reception of audiences and critics.
+
+Overall, the visualization highlights that although all included genres perform relatively well in terms of ratings, certain genres demonstrate a (frankly) marginal but noticeable advantage over others.
+
+# Conclusion
+
+This analysis demonstrates how TidyVerse tools can be used to transform and analyze a dataset containing multivalued categorical variables, specifically through the use of separate_rows() to restructure the genre field into a tidy format.
+
+Once tidied, the data could be efficiently grouped, summarized, and visualized to reveal patterns in average IMDb ratings across genres. Although the variation is relatively small, the visualization still allows for meaningful comparisons and highlights subtle differences in genre performance.
+
+Additionally, the use of axis scaling (via coordinate adjustment) and value labeling improved the interpretability of the visualization, ensuring that small differences were clearly communicated without distorting the data.
+
+Overall, this vignette illustrates the practical interoperability of TidyVerse packages in handling real-world data challenges, from data cleaning to visualization, within a coherent and reproducible workflow.
+

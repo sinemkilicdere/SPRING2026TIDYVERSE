@@ -1,0 +1,262 @@
+games <- read.csv("video_games.csv")
+games <- as_tibble(games)
+glimpse(games)
+
+games_clean <- games %>%
+  drop_na()
+  
+##Global Sales by Genre
+genre_sales <- games_clean %>%
+  group_by(Genre) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales))
+
+genre_sales
+
+ggplot(genre_sales, aes(x = reorder(Genre, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Global Sales by Genre",
+       x = "Genre",
+       y = "Sales")
+       
+##Global Sales by Platform
+platform_sales <- games_clean %>%
+  group_by(Platform) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales))
+
+platform_sales
+
+ggplot(platform_sales, aes(x = reorder(Platform, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Global Sales by Platform",
+       x = "Platform",
+       y = "Sales")
+       
+##Sales Over Time
+year_sales <- games_clean %>%
+  group_by(Year) %>%
+  summarise(total_sales = sum(Global_Sales))
+
+year_sales
+
+ggplot(year_sales, aes(x = Year, y = total_sales)) +
+  geom_line() +
+  labs(title = "Sales Over Time",
+       x = "Year",
+       y = "Global Sales")
+       
+
+---
+
+# 🔹 README
+
+```md
+## Tidyverse Video Game Sales Analysis
+
+This vignette demonstrates how to use Tidyverse tools such as dplyr and ggplot2 to analyze video game sales data.
+
+### Features:
+- Data cleaning using drop_na()
+- Grouping and summarizing data
+- Visualization using ggplot2
+
+###Dataset:
+Video game sales dataset including global and regional sales.
+
+
+```{r}
+install.package("tidyverse")
+
+Library("Tidyverse")
+```
+
+## Top 10 Games by Global Sales
+```{r}
+top_games <- games_clean %>%
+  arrange(desc(Global_Sales)) %>%
+  select(Name, Platform, Year, Genre, Publisher, Global_Sales) %>%
+  head(10)
+
+top_games
+
+ggplot(top_games, aes(x = reorder(Name, Global_Sales), y = Global_Sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 10 Video Games by Global Sales",
+       x = "Game",
+       y = "Global Sales")
+```
+
+
+## Average Global Sales by Genre
+
+```{r}
+avg_genre_sales <- games_clean %>%
+  group_by(Genre) %>%
+  summarise(avg_sales = mean(Global_Sales)) %>%
+  arrange(desc(avg_sales))
+
+avg_genre_sales
+
+ggplot(avg_genre_sales, aes(x = reorder(Genre, avg_sales), y = avg_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Average Global Sales by Genre",
+       x = "Genre",
+       y = "Average Global Sales")
+```
+
+
+## Regional Sales Comparison
+
+```{r}
+regional_sales <- games_clean %>%
+  summarise(
+    North_America = sum(NA_Sales),
+    Europe = sum(EU_Sales),
+    Japan = sum(JP_Sales),
+    Other = sum(Other_Sales)
+  )
+
+regional_sales
+
+regional_sales_long <- regional_sales %>%
+  pivot_longer(cols = everything(),
+               names_to = "Region",
+               values_to = "Sales")
+
+ggplot(regional_sales_long, aes(x = Region, y = Sales)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Video Game Sales by Region",
+       x = "Region",
+       y = "Sales")
+```
+
+## Sales by Genre and Region
+
+```{r}
+genre_region_sales <- games_clean %>%
+  group_by(Genre) %>%
+  summarise(
+    NA_Sales = sum(NA_Sales),
+    EU_Sales = sum(EU_Sales),
+    JP_Sales = sum(JP_Sales),
+    Other_Sales = sum(Other_Sales)
+  )
+
+genre_region_sales_long <- genre_region_sales %>%
+  pivot_longer(cols = c(NA_Sales, EU_Sales, JP_Sales, Other_Sales),
+               names_to = "Region",
+               values_to = "Sales")
+
+ggplot(genre_region_sales_long, aes(x = Genre, y = Sales, fill = Region)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "Genre Sales by Region",
+       x = "Genre",
+       y = "Sales")
+```
+
+
+## Top Publishers by Global Sales
+
+```{r}
+publisher_sales <- games_clean %>%
+  group_by(Publisher) %>%
+  summarise(total_sales = sum(Global_Sales)) %>%
+  arrange(desc(total_sales)) %>%
+  head(10)
+
+publisher_sales
+
+ggplot(publisher_sales, aes(x = reorder(Publisher, total_sales), y = total_sales)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 10 Publishers by Global Sales",
+       x = "Publisher",
+       y = "Global Sales")
+```
+
+
+## Statistical Summary
+
+```{r}
+summary(games_clean$Global_Sales)
+
+games_clean %>%
+  summarise(
+    mean_sales = mean(Global_Sales),
+    median_sales = median(Global_Sales),
+    min_sales = min(Global_Sales),
+    max_sales = max(Global_Sales),
+    sd_sales = sd(Global_Sales)
+  )
+```
+
+
+## Correlation Between Regional Sales and Global Sales
+
+```{r}
+sales_correlation <- games_clean %>%
+  select(NA_Sales, EU_Sales, JP_Sales, Other_Sales, Global_Sales)
+
+cor(sales_correlation)
+```
+
+## Scatterplot: North America Sales vs Global Sales
+
+```{r}
+ggplot(games_clean, aes(x = NA_Sales, y = Global_Sales)) +
+  geom_point(alpha = 0.4) +
+  labs(title = "North America Sales vs Global Sales",
+       x = "North America Sales",
+       y = "Global Sales")
+```
+
+## Linear Model
+
+```{r}
+model <- lm(Global_Sales ~ NA_Sales + EU_Sales + JP_Sales + Other_Sales, data = games_clean)
+
+summary(model)
+```
+
+# 🔹 README
+## Tidyverse Video Game Sales Analysis
+
+This vignette demonstrates how to use Tidyverse tools such as dplyr, tidyr, and ggplot2 to analyze video game sales data.
+
+### Features:
+- Data cleaning using drop_na()
+- Data transformation using group_by(), summarise(), and pivot_longer()
+- Visualization using ggplot2
+- Ranking and filtering top-performing games and publishers
+- Regional sales comparison and breakdown
+- Statistical summaries (mean, median, standard deviation)
+- Correlation analysis between regional and global sales
+- Linear regression model to predict global sales
+
+### Analyses Included:
+- Global sales by genre
+- Global sales by platform
+- Sales trends over time
+- Top 10 games by global sales
+- Average sales by genre
+- Total sales by region (NA, EU, JP, Other)
+- Genre performance across regions
+- Top publishers by global sales
+
+### Statistical Modeling:
+- Correlation matrix of regional sales vs global sales
+- Scatterplot of North America sales vs global sales
+- Linear regression model:
+  Global_Sales ~ NA_Sales + EU_Sales + JP_Sales + Other_Sales
+
+### Tools Used:
+- dplyr for data manipulation
+- ggplot2 for visualization
+- tidyr for reshaping data
+- tibble for improved data structure

@@ -1,0 +1,59 @@
+---
+title: "OnyVignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{OnyVignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(OnyVignette)
+```
+
+This vignette is a short summary of the 'DT' package, specifically the function 'datatable()', and how it can be used to create interactive data tables on HTML pages with a given input. See the official documentation here. Some added interaction capabilities are sorting, filtering and searching.
+
+Example 1: Basic Usage
+
+The dataframe() function will turn any dataframe or matrix to an interactive table. This is demonstrated on a synthesized student mental health dataset from kaggle in the code chunks below:
+
+```{r - Install Package}
+
+install.packages('DT')
+
+library('DT')
+```
+
+
+```{r - Load Data}
+
+student_frame <- data.frame(read.csv("https://raw.githubusercontent.com/ifi-ony/week9/refs/heads/main/studentframe.csv"))
+```
+
+```{r - Call Datatable}
+
+datatable(student_frame)
+```
+
+Example 2: Customization (Options Argument)
+
+The table's features can be customized using the 'options' argument of the datatable function:
+
+```{r - Options}
+
+datatable(student_frame,
+          options = list( #takes list as input
+          scrollX = TRUE, # adds horizontal scroll for user
+          pagelength = 20 # shows 20 observation per page instead of default 10
+          
+          ))
+```
+
+Many more capabilities can be explored such as button extensions and column/row formatting. This will be explored in an extended version of this vignette

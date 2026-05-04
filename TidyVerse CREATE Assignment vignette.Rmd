@@ -1,0 +1,28 @@
+---
+title: "TidyVerse CREATE"
+author: "Kristoff Oliphant"
+date: "2026-03-25"
+output: html_document
+---
+
+## Introduction
+
+In this vignette, I'll show how to use the 'dplyr' package to view sleep patterns with mammals. I plan to use the 'msleep' dataset to work with functions like filter and select.
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+sleepy_herbivores <- msleep %>%
+  filter(vore == "herbi", sleep_total > 12) %>%
+  select(name, vore, sleep_total)
+```
+
+```{r}
+sleepy_herbivores
+```
+
+## Conclusion
+
+In this code I wanted to focus on the sleep of herbivores from the msleep dataset. I used filter to find the class of vores that aligned with 'herbi' or in other words a herbivore. I also wanted to focus on herbivores that slept 12 hours or more. I then used select to specifically gather three columns which includes the name of the herbivore, the class of vore they are, and then the total amount of sleep they get.

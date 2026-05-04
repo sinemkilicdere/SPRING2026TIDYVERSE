@@ -1,0 +1,129 @@
+---
+title: "TIDYVERSE Create/ Mutate,Filter & Summarize-"
+author: "Michael Mayne"
+format: html
+editor: visual
+---
+
+## Understanding Tidyr (mutate(), filter (\_) & summarize(\_))
+
+For this document we will go over the fundamentals of the Tidyr data set in order to grasp specific information that we are interesting in for our data-sets.
+
+First, let us load tidyverse
+
+Note: If this is your first uploading tidyverse you will need to download the package.
+
+```{r}
+#install.packages(tidyverse) 
+# Code to download install packages 
+
+library(tidyverse)
+
+```
+
+### Viewing Our Dataset
+
+We current are using our Titanic dataset as an example for our project. So we will upload this data and call it titanic raw.
+
+```{r}
+titanic_Raw <- read.csv("https://raw.githubusercontent.com/Mayneman000/SPRING2026TIDYVERSEforkmayne/refs/heads/main/Titanic-Dataset.csv")
+```
+
+We take moment to view our data and the information connect to it.
+
+```{r}
+glimpse(titanic_Raw)
+```
+
+For this example we will focus on the age of the individuals in the titantic data. We will grasp the average age of all survivors( that we know of) and whether majority the survivor were adult or children.
+
+We will do this my making use of the summarize(*) and mutate(*\_) packages.
+
+### Indentify Data and Columns
+
+```{r}
+unique(titanic_Raw$Age)
+```
+
+### Create a new column using mutate()
+
+*Mutate() allows use to edit exisiting columns in a frame or create new exisiting columns using information in the dataframe.*
+
+Using mutate we collect the data on age and separate the attendants by age.
+
+The code below uses an if else loop to create our new column called "Adulthood". This adulthood column will be made from our "Age" column and have 2 values Adult and Minors.
+
+```{r}
+titanic_Raw %>%
+  mutate(Adulthood= if_else(Age >= 18, "Adult", "Minor"))
+```
+
+This code will be used again but this time it is to create a dataframe with our new column called "titanic_Full"
+
+```{r}
+
+
+titanic_Full <- titanic_Raw %>%
+  mutate(Legality = if_else(Age >= 18, "Adult", "Minor"))
+```
+
+### **Using summarize ( \_ ) & filter ( \_ ) to access data**
+
+Next we need to get a understanding of how much of our participant are in each group. So they best way we can do that is by using Summarize()
+
+*Summarize(\_) allows the use data to condense a data frame selection into a set of summary statistics*
+
+We can then figure out the amount of adults and minors that boarded the titanic.
+
+```{r}
+
+titanic_Full %>%
+  group_by(Legality) %>%    #Allows the distinction of data set
+  summarize(totals = n()) # use n to create a simple count
+```
+
+The result is a simple tibble that shows the total amount of individuals
+
+We can also use summarize to figure out averages, like what is the average age of survivors of the titanic? What the age of children and the average age of adults.
+
+Which we can do with dplyr packages and r.
+
+```{r}
+
+#Find average of a ll ages without summarize 
+mean(titanic_Full$Age, na.rm = TRUE)
+
+
+# Using summarize to find average on each age group
+Summary_Survivors <- titanic_Full %>%
+  drop_na()%>%
+  filter(Survived == "1") %>%
+  group_by(Legality)%>%
+  summarize(avg_age = mean(Age))
+
+
+```
+
+When using base R technique we can find that the average age of all survivors is about 29 to 30 years old.
+
+```{r}
+print(Summary_Survivors)
+```
+
+By using summarize and mean we can find the average age of an adult survivor was about 34 and the average age of a child survivor was 8.
+
+### Using mutate and summarize to create a visualization
+
+We have already used mutate and Summarize
+
+Now we can use both functions in order to develop a visual that combines our information.
+
+```{r}
+ggplot(Summary_Survivors, aes(x = Legality, y = avg_age, fill= Legality)) +
+      geom_col() +
+  labs( title = "Average Age of Adult and Minor Surivors",
+        y = "Age",
+        x = "Legal Status")
+```
+
+And thus we were able to find our data, create a new column, create a tibble to view a subset of our data, and gain a summary of a statistical question. This example is very simple and more complex examples can be used in the future with these principles.

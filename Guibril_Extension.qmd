@@ -1,0 +1,144 @@
+---
+title: "Analyzing Student Burnout Using dplyr"
+author: "Theresa Benny"
+output: html_document
+---
+
+## Overview
+
+This vignette demonstrates how to use dplyr functions from the tidyverse to analyze student mental health and burnout data. The goal is to explore patterns in burnout among students using a real dataset.
+
+## Load libraries
+
+```{r}
+library(tidyverse)
+
+## Load dataset
+data <- read_csv("student_mental_health_burnout.csv")
+
+data_small <- data %>%
+  select(
+    academic_pressure_score,
+    burnout_level,
+    daily_study_hours,
+    daily_sleep_hours
+  )
+
+data_small <- data_small %>%
+  mutate(
+    pressure_group = case_when(
+      academic_pressure_score <= 3 ~ "Low",
+      academic_pressure_score <= 7 ~ "Medium",
+      TRUE ~ "High"
+    )
+  )
+
+data_small <- data_small %>%
+  mutate(
+    burnout_numeric = case_when(
+      burnout_level == "Low" ~ 1,
+      burnout_level == "Medium" ~ 2,
+      burnout_level == "High" ~ 3
+    )
+  )
+
+table(data_small$pressure_group)
+```
+
+```{r}
+#Now that we have the select columns needed to analyze the statistics
+
+burnout_group_analysis <- data_small %>%
+  group_by(pressure_group) %>%
+  summarise(
+    avg_burnout = mean(burnout_numeric, na.rm = TRUE),
+    student_count = n()
+  ) %>%
+  arrange(desc(avg_burnout))
+
+burnout_group_analysis
+```
+
+Let's visualize this more clearly
+
+```{r}
+ggplot(burnout_group_analysis, aes(x = pressure_group, y = avg_burnout)) +
+  geom_col() +
+  labs(
+    title = "Average Burnout by Academic Pressure Level",
+    x = "Academic Pressure Level",
+    y = "Average Burnout (1 = Low, 3 = High)"
+  )
+```
+
+The analysis shows that average burnout levels are relatively consistent across different levels of academic pressure. While it might be expected that higher academic pressure leads to significantly higher burnout, this dataset does not show a strong or meaningful difference in average burnout across groups.
+
+This demonstrates that not all variables have a strong relationship, and highlights the importance of validating assumptions with data. The tidyverse tools used in this example—such as dplyr for grouping and summarizing—help make it easy to explore and evaluate these relationships.
+
+## ##Extension by Guibril Ramde
+
+In this extension, I add additional analysis by comparing burnout with sleep hours and study hours. This helps explore whether lifestyle habits may be related to student burnout in addition to academic pressure.
+
+```{r}
+
+# Create sleep groups
+data_extension <- data_small %>%
+  mutate(
+    sleep_group = case_when(
+      daily_sleep_hours < 6 ~ "Low Sleep",
+      daily_sleep_hours <= 8 ~ "Normal Sleep",
+      daily_sleep_hours > 8 ~ "High Sleep"
+    )
+  )
+```
+
+```{r}
+# Average burnout by sleep group
+sleep_burnout_analysis <- data_extension %>%
+  group_by(sleep_group) %>%
+  summarise(
+    avg_burnout = mean(burnout_numeric, na.rm = TRUE),
+    avg_study_hours = mean(daily_study_hours, na.rm = TRUE),
+    student_count = n()
+  ) %>%
+  arrange(desc(avg_burnout))
+
+sleep_burnout_analysis
+```
+
+```{r}
+# Visualization: burnout by sleep group
+ggplot(sleep_burnout_analysis, aes(x = sleep_group, y = avg_burnout)) +
+  geom_col() +
+  labs(
+    title = "Average Burnout by Sleep Group",
+    x = "Sleep Group",
+    y = "Average Burnout (1 = Low, 3 = High)"
+  )
+```
+
+```{r}
+# Relationship between study hours and burnout
+study_burnout_analysis <- data_extension %>%
+  group_by(burnout_level) %>%
+  summarise(
+    avg_study_hours = mean(daily_study_hours, na.rm = TRUE),
+    avg_sleep_hours = mean(daily_sleep_hours, na.rm = TRUE),
+    student_count = n()
+  )
+
+study_burnout_analysis
+```
+
+```{r}
+# Visualization: study hours by burnout level
+ggplot(study_burnout_analysis, aes(x = burnout_level, y = avg_study_hours)) +
+  geom_col() +
+  labs(
+    title = "Average Study Hours by Burnout Level",
+    x = "Burnout Level",
+    y = "Average Daily Study Hours"
+  )
+```
+
+This extension adds a second layer to the original analysis by examining whether sleep and study habits are connected to burnout. Instead of only comparing academic pressure groups, this analysis looks at average burnout by sleep category and average study hours by burnout level. These added summaries and visualizations provide a broader view of possible factors related to student burnout.
