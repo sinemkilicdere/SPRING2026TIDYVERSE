@@ -146,7 +146,9 @@ Revision/Addition Description and Link:
 # Desiree T
 Initial Description and Link: This vignette covers the dataset edible-plant-database. It is a vignette that covers Dplyr and includes the use of several functions. GitHub RAW link for dataset: "https://raw.githubusercontent.com/nrennie/data/refs/heads/main/edible-plant-database/edible_plants.csv"
 
-Revision/Addition Description and Link: 
+Revision/Addition Description and Link: I revised Guibril's tidyverse create .qmd file https://github.com/acatlin/SPRING2026TIDYVERSE/blob/main/Guibril_Vignette.qmd 
+
+I added units to the visualizatons and binned them as before they were not processed separately. Converted into long format from wide format. The main focus was on data management and reshaping. Improved visualizations and added brief analysis. 
 
 # Dylan G
 Initial Description and Link: 
