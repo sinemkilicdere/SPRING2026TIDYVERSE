@@ -1,0 +1,56 @@
+---
+title: "zihao_iris_vignitte_Fraz_Aslam_Extension"
+output: html_document
+date: "2026-05-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+data(iris)
+```
+
+```{r}
+# Only Virginica 
+virginica_only <- iris %>%
+  filter(Species == "virginica")
+
+head(virginica_only)
+
+# Sort by Petal Length, Descending 
+virginica_ranked <- virginica_only %>%
+  arrange(desc(Petal.Length))
+
+head(virginica_ranked, 10)
+
+# Top 5 per species 
+top5_per_species <- iris %>%
+  group_by(Species) %>%
+  slice_max(order_by = Petal.Length, n = 5)
+
+top5_per_species
+
+
+overall_mean <- mean(iris$Petal.Length)
+
+# Flag and count flowers above average per species
+above_avg <- iris %>%
+  mutate(above_avg = Petal.Length > overall_mean) %>%
+  filter(above_avg == TRUE) %>%
+  count(Species, name = "count_above_avg")
+
+above_avg
+
+ggplot(above_avg, aes(x = Species, y = count_above_avg, fill = Species)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Number of Flowers Above Average Petal Length by Species",
+    x = "Species",
+    y = "Count Above Average"
+  ) +
+  theme_minimal()
+```
