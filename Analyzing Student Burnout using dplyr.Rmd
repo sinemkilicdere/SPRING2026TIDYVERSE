@@ -74,3 +74,35 @@ While it might be expected that higher academic pressure leads to significantly 
 
 This demonstrates that not all variables have a strong relationship, and highlights the importance of validating assumptions with data. 
 The tidyverse tools used in this example—such as dplyr for grouping and summarizing—help make it easy to explore and evaluate these relationships.
+
+## 🔹 Extension by Izza Khan
+
+```{r}
+library(tidyverse)
+
+extended_analysis <- data_small %>%
+  group_by(pressure_group) %>%
+  summarise(
+    avg_burnout = mean(burnout_numeric, na.rm = TRUE),
+    count = n()
+  )
+
+extended_analysis
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(extended_analysis, aes(x = pressure_group, y = avg_burnout)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Extended Analysis: Burnout by Pressure Group",
+    x = "Pressure Group",
+    y = "Average Burnout"
+  )
+```
+
+### Explanation
+
+This extension builds on the original analysis by using the cleaned dataset (data_small) to further explore burnout patterns. It summarizes average burnout by pressure group and visualizes the results.
