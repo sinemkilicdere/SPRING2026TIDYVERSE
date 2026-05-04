@@ -454,7 +454,16 @@ Revision/Addition Description and Link: https://github.com/samanthabarbaro/SPRIN
 # Shawn I
 Initial Description and Link:
 
+I'll be using the National Center for Health Statistics' (NCHS) National Health and Nutrition Examination Survey (NHANES) study from August 2021-August 2023.
+
+I'll show how simple it is by using tidyverse to download, prep, and display the data. We download the entire dataset, select the columns we want to showcase (DBD100, DR1DRSTZ), select, filter, and then display.
+
+[vignette](https://github.com/Siganz/SPRING2026TIDYVERSE/blob/main/Shawn_Ganz_Vignette.qmd)
+[dataset](https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DR1TOT_L.xpt)
+
 Revision/Addition Description and Link:
+
+I'll be adding ggplot2 visuals to the following [vignette](https://github.com/acatlin/SPRING2026TIDYVERSE/blob/main/tidyverse_create.qmd)
 
 # Sinem K
 Initial Description and Link:

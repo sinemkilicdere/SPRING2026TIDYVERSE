@@ -107,3 +107,68 @@ Before taking this class, I had never used dplyr before and mostly learned it th
 #Citation
 
 "What is dplyr?": https://dataconomy.com/2025/04/25/what-is-dplyr/
+
+# Extension - Shawn Ganz (https://github.com/Siganz)
+
+Hello, I'm going to **extend** this qmd. I noticed that there's no visualizations and tidyverse comes with ggplot2, so let's create three ggplots for the plant_cult tibble.
+
+We can do a simple ggplot by invoking `ggplot(aes(x = , y = )) + geom_col()`- note that we use geom_col() in this example because we have categorical data (x = cultivation) and and already summarized numerical data.
+
+```{r}
+plant_cult |>
+  ggplot(aes(x = (cultivation),
+             y = avg_harvest_wait)) + 
+  geom_col()
+```
+
+However, it doesn't look too nice!
+
+We can add a `reorder()` to the `aes(x=)`that way we can have the graph sorted by the y axis and we can add a touch of color via `fill =` within ggplot's `aes()` function. Also, some of the words are crossing over in the x axis, so we can flip the graph to be horizontal instead of vertical via `+ coord_flip()`. We can also add a title and change the axis titles, because the current field names don't offer much information... We can do this via `labs(title =, x =, y =)`. Lastly we can apply a theme, which offers a style, similar to a template. In this case, we can use `+theme_minimal()`.
+
+Add that all together and we get this:
+
+```{r}
+plant_cult |>
+  ggplot(aes(x = reorder(cultivation, avg_harvest_wait),
+             y = avg_harvest_wait, fill = cultivation)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Average Harvest Wait by Cultivation Type",
+    x = "Cultivation Type",
+    y = "Average Harvest Wait"
+  ) +
+  theme_minimal()
+```
+
+Looks pretty good! Now we can just apply the same code and comparison across the other columns, just have to change the
+
+```{r}
+plant_cult |>
+  ggplot(aes(x = reorder(cultivation, avg_ph_tolerance),
+             y = avg_ph_tolerance, fill = cultivation)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Average pH Tolerance by Cultivation Type",
+    x = "Cultivation Type",
+    y = "Average pH Tolerance"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+plant_cult|>
+  ggplot(aes(x = reorder(cultivation, plant_count),
+             y = plant_count, fill = cultivation)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Number of Plants by Cultivation Type",
+    x = "Cultivation Type",
+    y = "Plant Count"
+  ) +
+  theme_minimal()
+```
+
+While showing a tibble is fine, ggplot allows you to visualize it to really show the impact.
